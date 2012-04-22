@@ -3,7 +3,7 @@
 module Graphics.Rendering.Canvas
   ( Render(..)
   , doRender
-    
+
   , newPath
   , moveTo
   , relLineTo

@@ -86,9 +86,9 @@ canvasTransf t = C.transform a1 a2 b1 b2 c1 c2
 
 instance Renderable (Segment R2) Canvas where
   render _ (Linear v) = C $ uncurry C.relLineTo (unr2 v)
-  render _ (Cubic (unr2 -> (x1,y1)) 
-                  (unr2 -> (x2,y2)) 
-                  (unr2 -> (x3,y3))) 
+  render _ (Cubic (unr2 -> (x1,y1))
+                  (unr2 -> (x2,y2))
+                  (unr2 -> (x3,y3)))
     = C $ C.relCurveTo x1 y1 x2 y2 x3 y3
 
 instance Renderable (Trail R2) Canvas where
