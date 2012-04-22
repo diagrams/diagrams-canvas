@@ -61,6 +61,7 @@ canvasStyle s = foldr (>>) (return ())
                             , handle lWidth
                             , handle lJoin
                             , handle lCap
+                            , handle opacity_
                             ]
   where handle :: (AttributeClass a) => (a -> C.Render ()) -> Maybe (C.Render ())
         handle f = f `fmap` getAttr s
@@ -69,6 +70,7 @@ canvasStyle s = foldr (>>) (return ())
         lWidth = C.lineWidth . getLineWidth
         lCap = C.lineCap . getLineCap
         lJoin = C.lineJoin . getLineJoin
+        opacity_ = C.globalAlpha . getOpacity
 
 canvasTransf :: Transformation R2 -> C.Render ()
 canvasTransf t = C.transform a1 a2 b1 b2 c1 c2

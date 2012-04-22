@@ -23,6 +23,7 @@ module Graphics.Rendering.Canvas
   , lineWidth
   , lineCap
   , lineJoin
+  , globalAlpha
   , withStyle
   ) where
 
@@ -43,11 +44,12 @@ data DrawState = DS
                  , dsCap :: LineCap
                  , dsJoin :: LineJoin
                  , dsWidth :: Float
+                 , dsAlpha :: Float
                  , dsTransform :: (Float,Float,Float,Float,Float,Float)
                  } deriving (Eq)
 
 emptyDS :: DrawState
-emptyDS = DS 0 (0,0,0,1) 0 LineCapButt LineJoinMiter 0 (1,0,0,1,0,0)
+emptyDS = DS 0 (0,0,0,1) 0 LineCapButt LineJoinMiter 0 1 (1,0,0,1,0,0)
 
 data RenderState = RS
                    { drawState :: DrawState
@@ -201,6 +203,12 @@ fromLineJoin :: LineJoin -> String
 fromLineJoin LineJoinRound = show "round"
 fromLineJoin LineJoinBevel = show "bevel"
 fromLineJoin _             = show "miter"
+
+globalAlpha :: Double -> Render ()
+globalAlpha a = setDSWhen
+                (\ds -> ds { dsAlpha = a' })
+                (canvas $ C.globalAlpha a')
+  where a' = realToFrac a
 
 -- TODO: update the transform's state for translate, scale, and rotate
 translate :: Double -> Double -> Render ()
