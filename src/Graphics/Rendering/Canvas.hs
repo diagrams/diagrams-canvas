@@ -132,12 +132,12 @@ byteRange d = floor (d * 255)
 
 showColorJS :: (Color c) => c -> String
 showColorJS c = concat
-    [ "\"rgba("
+    [ "rgba("
     , s r, ","
     , s g, ","
     , s b, ","
     , show a
-    , ")\""
+    , ")"
     ]
   where s = show . byteRange
         (r,g,b,a) = colorToRGBA c
