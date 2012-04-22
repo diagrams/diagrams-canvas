@@ -16,24 +16,16 @@ module Diagrams.Backend.Canvas
   , Options(..) -- for rendering options specific to Canvas
   ) where
 
-import qualified Graphics.Rendering.Canvas as C
-import qualified Graphics.Blank as BC
-
-import Diagrams.Prelude
-
-import Graphics.Rendering.Diagrams.Transform
-
-import Diagrams.TwoD.Shapes
-import Diagrams.TwoD.Adjust (adjustDia2D, adjustSize)
-
-import Control.Monad (when)
-import Data.Maybe (catMaybes)
-
-import Data.VectorSpace
-
-import Data.Monoid
+import           Control.Monad (when)
 import qualified Data.Foldable as F
-import Data.Typeable
+import           Data.Maybe (catMaybes)
+import           Data.Typeable
+
+import           Diagrams.Prelude
+import           Diagrams.TwoD.Adjust (adjustDia2D)
+import qualified Graphics.Blank as BC
+import qualified Graphics.Rendering.Canvas as C
+
 
 -- | This data declaration is simply used as a token to distinguish this rendering engine.
 data Canvas = Canvas
@@ -41,7 +33,7 @@ data Canvas = Canvas
 
 instance Monoid (Render Canvas R2) where
   mempty  = C $ return ()
-  (C r1) `mappend` (C r2) = C (r1 >> r2)
+  (C c1) `mappend` (C c2) = C (c1 >> c2)
 
 instance Backend Canvas R2 where
   data Render  Canvas R2 = C (C.Render ())
@@ -53,7 +45,7 @@ instance Backend Canvas R2 where
   withStyle _ s t (C r) = C $ do
     C.withStyle (canvasTransf t) (canvasStyle s) r
 
-  doRender _ (CanvasOptions size) (C r) = C.doRender r
+  doRender _ (CanvasOptions _) (C r) = C.doRender r
 
   adjustDia c opts d = adjustDia2D canvasSize setCanvasSize c opts
                        (d # reflectY # fcA transparent)
