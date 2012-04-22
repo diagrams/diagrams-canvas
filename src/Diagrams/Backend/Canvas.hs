@@ -48,7 +48,7 @@ instance Backend Canvas R2 where
   doRender _ (CanvasOptions _) (C r) = C.doRender r
 
   adjustDia c opts d = adjustDia2D canvasSize setCanvasSize c opts
-                       (d # reflectY # fcA transparent)
+                       (d # reflectY # fcA transparent # lw 0.01)
     where setCanvasSize sz o = o { canvasSize = sz }
 
 renderC :: (Renderable a Canvas, V a ~ R2) => a -> C.Render ()
