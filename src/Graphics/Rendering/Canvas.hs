@@ -26,12 +26,12 @@ module Graphics.Rendering.Canvas
   , withStyle
   ) where
 
-import Diagrams.Attributes(Color(..),LineCap(..),LineJoin(..))
-import Control.Arrow ((***))
-import Control.Monad.State
-import Control.Applicative((<$>))
-import Data.Word(Word8)
-import Data.NumInstances ()
+import           Control.Applicative((<$>))
+import           Control.Arrow ((***))
+import           Control.Monad.State
+import           Data.NumInstances ()
+import           Data.Word(Word8)
+import           Diagrams.Attributes(Color(..),LineCap(..),LineJoin(..))
 import qualified Graphics.Blank as C
 
 type RGBA = (Double, Double, Double, Double)
