@@ -116,7 +116,19 @@ relCurveTo ax ay bx by cx cy = do
   move (cx',cy')
 
 stroke :: Render ()
-stroke = canvas $ C.stroke ()
+stroke = do
+
+  -- From the HTML5 canvas specification regarding line width:
+  --
+  --   "On setting, zero, negative, infinite, and NaN values must be
+  --   ignored, leaving the value unchanged; other values must change
+  --   the current value to the new value.
+  --
+  -- Hence we must implement a line width of zero by simply not
+  -- sending a stroke command.
+
+  w <- gets (dsWidth . drawState)
+  when (w > 0) (canvas $ C.stroke ())
 
 fill :: Render ()
 fill = canvas $ C.fill ()
