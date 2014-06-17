@@ -1,4 +1,4 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving, RecordWildCards #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving, RecordWildCards, OverloadedStrings #-}
 
 module Graphics.Rendering.Canvas
   ( Render(..)
@@ -34,6 +34,9 @@ import           Data.NumInstances ()
 import           Data.Word(Word8)
 import           Diagrams.Attributes(Color(..),LineCap(..),LineJoin(..))
 import qualified Graphics.Blank as C
+import qualified Data.Text as T
+import           Data.Text (Text)
+import           Control.Applicative
 
 type RGBA = (Double, Double, Double, Double)
 
@@ -60,7 +63,7 @@ emptyRS :: RenderState
 emptyRS = RS emptyDS []
 
 newtype Render m = Render { runRender :: StateT RenderState C.Canvas m }
-  deriving (Functor, Monad, MonadState RenderState)
+  deriving (Functor, Monad, Applicative, MonadState RenderState)
 
 doRender :: Render a -> C.Canvas a
 doRender r = evalStateT (runRender r) emptyRS
@@ -144,16 +147,18 @@ restore = restoreRS >> canvas (C.restore ())
 byteRange :: Double -> Word8
 byteRange d = floor (d * 255)
 
-showColorJS :: (Color c) => c -> String
-showColorJS c = concat
+showColorJS :: (Color c) => c -> Text
+showColorJS c = T.concat
     [ "rgba("
-    , s r, ","
+        , s r, ","
     , s g, ","
     , s b, ","
-    , show a
+    , T.pack (show a)
     , ")"
     ]
-  where s = show . byteRange
+
+  where s :: Double -> Text
+        s = T.pack . show . byteRange
         (r,g,b,a) = colorToRGBA c
 
 setDSWhen :: (DrawState -> DrawState) -> Render () -> Render ()
@@ -194,15 +199,15 @@ lineJoin lj = setDSWhen
               (\ds -> ds { dsJoin = lj })
               (canvas $ C.lineJoin (fromLineJoin lj))
 
-fromLineCap :: LineCap -> String
-fromLineCap LineCapRound  = show "round"
-fromLineCap LineCapSquare = show "square"
-fromLineCap _             = show "butt"
+fromLineCap :: LineCap -> Text
+fromLineCap LineCapRound  = T.pack $ show "round"
+fromLineCap LineCapSquare = T.pack $ show "square"
+fromLineCap _             = T.pack $ show "butt"
 
-fromLineJoin :: LineJoin -> String
-fromLineJoin LineJoinRound = show "round"
-fromLineJoin LineJoinBevel = show "bevel"
-fromLineJoin _             = show "miter"
+fromLineJoin :: LineJoin -> Text
+fromLineJoin LineJoinRound = T.pack $ show "round"
+fromLineJoin LineJoinBevel = T.pack $ show "bevel"
+fromLineJoin _             = T.pack $ show "miter"
 
 globalAlpha :: Double -> Render ()
 globalAlpha a = setDSWhen
@@ -227,3 +232,6 @@ withStyle t s r = do
   stroke
   fill
   restore
+
+colorToRGBA :: (Color c) => c -> RGBA
+colorToRGBA = undefined
