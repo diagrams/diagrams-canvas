@@ -14,7 +14,7 @@
 module Diagrams.Backend.Canvas.CmdLine
        ( defaultMain
        , multiMain
-
+       , mainWith
        , Canvas
        ) where
 
@@ -66,7 +66,7 @@ defaultMain d = do
   canvasRender opts d
 
 canvasRender :: DiagramOpts -> Diagram Canvas R2 -> IO ()
-canvasRender opts d = BC.blankCanvas (port opts) (canvasDia opts d)
+canvasRender opts d = BC.blankCanvas (fromIntegral (port opts)) (canvasDia opts d)
 
 canvasDia :: DiagramOpts -> Diagram Canvas R2 -> BC.Context -> IO ()
 canvasDia opts d context = do
@@ -88,3 +88,7 @@ multiMain ds = do
     Just sel -> case lookup sel ds of
       Nothing -> putStrLn $ "Unknown diagram: " ++ sel
       Just d  -> canvasRender opts d
+      
+
+mainWith :: Diagram Canvas R2 -> IO ()
+mainWith = defaultMain       -- for now
