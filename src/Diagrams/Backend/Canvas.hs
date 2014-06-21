@@ -173,7 +173,8 @@ instance Renderable (Trail R2) Canvas where
 
 instance Renderable (Path R2) Canvas where
   render :: Canvas -> Path R2 -> Render Canvas (V (Path R2))
-  render _ (Path trs) = C $ error "render"
+  render _  = C . C.renderPath 
+
 
 {-
 -- newtype Path R2 = Path [Located (Trail R2)]

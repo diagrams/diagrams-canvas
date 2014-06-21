@@ -1,9 +1,10 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving, RecordWildCards, OverloadedStrings #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving, RecordWildCards, OverloadedStrings, ViewPatterns #-}
 
 module Graphics.Rendering.Canvas
   ( Render(..)
   , doRender
-
+  , renderPath
+  , renderTrail
   , newPath
   , moveTo
   , relLineTo
@@ -37,6 +38,10 @@ import qualified Graphics.Blank as C
 import qualified Data.Text as T
 import           Data.Text (Text)
 import           Control.Applicative
+
+import           qualified Diagrams.Prelude as P
+import           Diagrams.Prelude (Located, Trail,R2)
+
 
 type RGBA = (Double, Double, Double, Double)
 
@@ -236,13 +241,25 @@ withStyle t s r = do
 colorToRGBA :: (Color c) => c -> RGBA
 colorToRGBA = error "colorToRGBA"
 
-{-
-renderPath :: Path R2 -> S.Svg
-renderPath trs  = S.path ! A.d makePath
-  where
-    makePath = mkPath $ mapM_ renderTrail (op Path trs)
 
-renderTrail :: Located (Trail R2) -> S.Path
+renderPath :: P.Path R2 -> Render ()
+renderPath (P.Path trs) = newPath >> mapM_ renderTrail trs
+
+renderTrail :: Located (Trail R2) -> Render ()
+renderTrail (P.viewLoc -> (P.unp2 -> (x,y), t)) = moveTo x y >> P.withTrail renderLine renderLoop t
+  where
+    renderLine = error "renderLine" -- mapM_ renderSeg . lineSegments
+    renderLoop lp = error "renderLoop" -- do
+{-      case loopSegments lp of
+        -- let 'z' handle the last segment if it is linear
+        (segs, Linear _) -> mapM_ renderSeg segs
+
+        -- otherwise we have to emit it explicitly
+        _ -> mapM_ renderSeg (lineSegments . cutLoop $ lp)
+      z -}
+
+{-
+            renderTrail :: Located (Trail R2) -> S.Path
 renderTrail (viewLoc -> (unp2 -> (x,y), t)) = m x y >> withTrail renderLine renderLoop t
   where
     renderLine = mapM_ renderSeg . lineSegments
