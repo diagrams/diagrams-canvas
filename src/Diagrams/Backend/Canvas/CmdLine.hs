@@ -68,7 +68,7 @@ defaultMain d = do
 canvasRender :: DiagramOpts -> Diagram Canvas R2 -> IO ()
 canvasRender opts d = BC.blankCanvas (fromIntegral (port opts)) (canvasDia opts d)
 
-canvasDia :: DiagramOpts -> Diagram Canvas R2 -> BC.Context -> IO ()
+canvasDia :: DiagramOpts -> Diagram Canvas R2 -> BC.DeviceContext -> IO ()
 canvasDia opts d context = do
   BC.send context $
     renderDia 

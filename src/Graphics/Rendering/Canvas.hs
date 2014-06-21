@@ -234,4 +234,24 @@ withStyle t s r = do
   restore
 
 colorToRGBA :: (Color c) => c -> RGBA
-colorToRGBA = undefined
+colorToRGBA = error "colorToRGBA"
+
+{-
+renderPath :: Path R2 -> S.Svg
+renderPath trs  = S.path ! A.d makePath
+  where
+    makePath = mkPath $ mapM_ renderTrail (op Path trs)
+
+renderTrail :: Located (Trail R2) -> S.Path
+renderTrail (viewLoc -> (unp2 -> (x,y), t)) = m x y >> withTrail renderLine renderLoop t
+  where
+    renderLine = mapM_ renderSeg . lineSegments
+    renderLoop lp = do
+      case loopSegments lp of
+        -- let 'z' handle the last segment if it is linear
+        (segs, Linear _) -> mapM_ renderSeg segs
+
+        -- otherwise we have to emit it explicitly
+        _ -> mapM_ renderSeg (lineSegments . cutLoop $ lp)
+      z
+-}

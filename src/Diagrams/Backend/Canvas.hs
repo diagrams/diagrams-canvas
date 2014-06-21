@@ -5,6 +5,8 @@
            , TypeSynonymInstances
            , DeriveDataTypeable
            , ViewPatterns
+           , InstanceSigs
+           , ScopedTypeVariables
   #-}
 {-|
   The Canvas backend.
@@ -16,6 +18,7 @@ module Diagrams.Backend.Canvas
   , Options(..) -- for rendering options specific to Canvas
   ) where
 
+import           Data.Tree
 import           Control.Monad (when)
 import qualified Data.Foldable as F
 import           Data.Maybe (catMaybes)
@@ -27,11 +30,13 @@ import           GHC.Generics                 (Generic)
 
 import           Diagrams.Prelude
 import           Diagrams.TwoD.Adjust (adjustDia2D)
+import           Diagrams.TwoD.Attributes     (splitTextureFills)
 import qualified Graphics.Blank as BC
 import qualified Graphics.Rendering.Canvas as C
 import           Diagrams.Core.Compile
 import           Diagrams.Core.Types          (Annotation (..))
 import           Diagrams.TwoD.Size           (sizePair)
+import           Diagrams.TwoD.Text
 
 
 -- | This data declaration is simply used as a token to distinguish this rendering engine.
@@ -49,27 +54,61 @@ instance Backend Canvas R2 where
           { _canvasSize   :: SizeSpec2D   -- ^ the requested size
           }
 
+  renderRTree :: Canvas -> Options Canvas R2 -> RTree Canvas R2 Annotation -> Result Canvas R2
   renderRTree _ opts rt = evalState canvasOutput initialCanvasRenderState
     where
+      canvasOutput :: State CanvasRenderState (BC.Canvas ())
       canvasOutput = do
         let C r = toRender rt
             (w,h) = sizePair (opts^.size)
-        return $ undefined -- R.svgHeader w h (opts^.svgDefinitions) $ cvs
-
-{-
-  withStyle _ s t (C r) = C $ do
-    C.withStyle (canvasTransf t) (canvasStyle s) r
-
-  doRender _ (CanvasOptions _) (C r) = C.doRender r
-
--}
+                    -- This is where you can mess with the size
+        return $ C.doRender $ r
 --  adjustDia c opts d = adjustDia2D size c opts (d # reflectY)
   adjustDia c opts d = adjustDia2D size c opts
                        (d # reflectY # fcA transparent) --  # lw 0.01)
 
 
 toRender :: RTree Canvas R2 Annotation -> Render Canvas R2
-toRender = undefined
+toRender = fromRTree
+  . Node (RStyle (mempty # recommendFillColor (transparent :: AlphaColour Double)))
+  . (:[])
+  . splitTextureFills
+    where
+{-
+      fromRTree (Node (RAnnot (Href uri)) rs)
+        = R $ do
+            let R r =  foldMap fromRTree rs
+            svg <- r
+            return $ (S.a ! xlinkHref (S.toValue uri)) svg
+-}
+      fromRTree (Node (RPrim p) _) = render Canvas p
+{-
+      fromRTree (Node (RStyle sty) ts)
+        = R $ do
+            let R r = foldMap fromRTree ts
+
+            -- save current setting for local text
+            oldIsLocal <- use isLocalText
+            -- check if this style speficies a font size in Local units
+            case getFontSizeIsLocal <$> getAttr sty of
+              Nothing      -> return ()
+              Just isLocal -> isLocalText .= isLocal
+            -- render subtrees
+            svg <- r
+            -- restore the old setting for local text
+            isLocalText .= oldIsLocal
+
+            idFill <- use fillGradId
+            idLine <- use lineGradId
+            clippedSvg <- renderSvgWithClipping svg sty
+            lineGradDefs <- lineTextureDefs sty
+            fillGradDefs <- fillTextureDefs sty
+            let textureDefs = fillGradDefs `mappend` lineGradDefs
+            return $ (S.g ! R.renderStyles idFill idLine sty)
+                     (textureDefs `mappend` clippedSvg)
+-}
+      fromRTree (Node _ rs) = F.foldMap fromRTree rs
+
 
 data CanvasRenderState = CanvasRenderState
 
@@ -131,8 +170,18 @@ instance Renderable (Trail R2) Canvas where
     when c $ C.closePath
 -}
 
+
+instance Renderable (Path R2) Canvas where
+  render :: Canvas -> Path R2 -> Render Canvas (V (Path R2))
+  render _ (Path trs) = C $ error "render"
+
 {-
-INSTANCE Renderable (Path R2) Canvas where
+-- newtype Path R2 = Path [Located (Trail R2)]
+-- Located (Trail R2)
+-- Located a = Loc { loc :: Point (V a), unLoc a:: a }
+--  viewLoc :: Located a -> (Point (V a), a)
+
+instance Renderable (Path R2) Canvas where
   render _ (Path trs) = C $ C.newPath >> F.mapM_ renderTrail trs
     where renderTrail (unp2 -> p, tr) = do
             uncurry C.moveTo p
