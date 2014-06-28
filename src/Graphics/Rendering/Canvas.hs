@@ -1,9 +1,14 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving, RecordWildCards, OverloadedStrings #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving
+           , RecordWildCards
+           , OverloadedStrings 
+           , TemplateHaskell #-}
 
 module Graphics.Rendering.Canvas
-  ( Render(..)
-  , doRender
-
+  ( RenderM(..)
+  , liftC
+  , getStyleAttrib
+  , runRenderM
+  , accumStyle
   , newPath
   , moveTo
   , relLineTo
@@ -21,108 +26,97 @@ module Graphics.Rendering.Canvas
   , strokeColor
   , fillColor
   , lineWidth
-  , lineCap
-  , lineJoin
-  , globalAlpha
-  , withStyle
+  , fromLineCap
+  , fromLineJoin
   ) where
 
 import           Control.Applicative((<$>))
 import           Control.Arrow ((***))
+import           Control.Lens hiding (transform, (#))
 import           Control.Monad.State
+import           Data.Default.Class
+import           Data.Maybe (fromMaybe)
 import           Data.NumInstances ()
 import           Data.Word(Word8)
+import           Diagrams.Prelude hiding (font, moveTo, arc, stroke, fillColor,
+                                          transform)
+
 import           Diagrams.Attributes(Color(..),LineCap(..),LineJoin(..), 
                                      SomeColor(..), colorToSRGBA)
+import           Diagrams.Core.Style           (Style)
+import           Diagrams.Core.Compile
+import           Diagrams.Core.Types
+import           Diagrams.Core.Transform  hiding (transform)
 import           Diagrams.TwoD.Attributes (Texture(..))
-import qualified Graphics.Blank as C
+import           Diagrams.TwoD.Types      (R2(..))
+import qualified Graphics.Blank as BC
 import qualified Data.Text as T
 import           Data.Text (Text)
 import           Control.Applicative
+import qualified Control.Monad.StateStack as SS
 
-type RGBA = (Double, Double, Double, Double)
+data CanvasState = CanvasState { _accumStyle :: Style R2
+                               , _csPos :: (Float, Float)}
 
-data DrawState = DS
-                 { dsPos :: (Float,Float)
-                 , dsFill :: RGBA
-                 , dsStroke :: RGBA
-                 , dsCap :: LineCap
-                 , dsJoin :: LineJoin
-                 , dsWidth :: Float
-                 , dsAlpha :: Float
-                 , dsTransform :: (Float,Float,Float,Float,Float,Float)
-                 } deriving (Eq)
+makeLenses ''CanvasState
 
-emptyDS :: DrawState
-emptyDS = DS 0 (0,0,0,1) 0 LineCapButt LineJoinMiter 0 1 (1,0,0,1,0,0)
+instance Default CanvasState where
+  def = CanvasState { _accumStyle = mempty
+                    , _csPos = (0,0)}
 
-data RenderState = RS
-                   { drawState :: DrawState
-                   , saved :: [DrawState]
-                   }
+type RenderM a = SS.StateStackT CanvasState BC.Canvas a
 
-emptyRS :: RenderState
-emptyRS = RS emptyDS []
+liftC :: BC.Canvas a -> RenderM a
+liftC = lift
 
-newtype Render m = Render { runRender :: StateT RenderState C.Canvas m }
-  deriving (Functor, Monad, Applicative, MonadState RenderState)
+runRenderM :: RenderM a -> BC.Canvas a
+runRenderM = flip SS.evalStateStackT def
 
-doRender :: Render a -> C.Canvas a
-doRender r = evalStateT (runRender r) emptyRS
+move :: (Float, Float) -> RenderM ()
+move p = do csPos .= p
 
-canvas :: C.Canvas a -> Render a
-canvas = Render . lift
+save :: RenderM ()
+save = SS.save >> liftC (BC.save ())
 
-move :: (Float,Float) -> Render ()
-move p = modify $ \rs@(RS{..}) -> rs { drawState = drawState { dsPos = p } }
+restore :: RenderM ()
+restore = liftC (BC.restore ()) >> SS.restore
 
-setDS :: DrawState -> Render ()
-setDS d = modify $ (\rs -> rs { drawState = d })
+newPath :: RenderM ()
+newPath = liftC $ BC.beginPath ()
 
-saveRS :: Render ()
-saveRS = modify $ \rs@(RS{..}) -> rs { saved = drawState : saved }
+closePath :: RenderM ()
+closePath = liftC $ BC.closePath ()
 
-restoreRS :: Render ()
-restoreRS = modify go
-  where
-    go rs@(RS{saved = d:ds}) = rs { drawState = d, saved = ds }
-    go rs = rs
+arc :: Double -> Double -> Double -> Double -> Double -> RenderM ()
+arc a b c d e = liftC $ BC.arc (realToFrac a, realToFrac b, realToFrac c, realToFrac d, realToFrac e,True)
 
-at :: Render (Float,Float)
-at = (dsPos . drawState) <$> get
-
-newPath :: Render ()
-newPath = canvas $ C.beginPath ()
-
-closePath :: Render ()
-closePath = canvas $ C.closePath ()
-
-arc :: Double -> Double -> Double -> Double -> Double -> Render ()
-arc a b c d e = canvas $ C.arc (realToFrac a, realToFrac b, realToFrac c, realToFrac d, realToFrac e,True)
-
-moveTo :: Double -> Double -> Render ()
+moveTo :: Double -> Double -> RenderM ()
 moveTo x y = do
   let x' = realToFrac x
       y' = realToFrac y
-  canvas $ C.moveTo (x', y')
+  liftC $ BC.moveTo (x', y')
   move (x', y')
 
-relLineTo :: Double -> Double -> Render ()
+relLineTo :: Double -> Double -> RenderM ()
 relLineTo x y = do
-  p <- at
+  p <- use csPos
   let p' = p + (realToFrac x, realToFrac y)
-  canvas $ C.lineTo p'
+  liftC $ BC.lineTo p'
   move p'
 
-relCurveTo :: Double -> Double -> Double -> Double -> Double -> Double -> Render ()
+relCurveTo :: Double -> Double -> Double -> Double -> Double -> Double -> RenderM ()
 relCurveTo ax ay bx by cx cy = do
-  p <- at
+  p <- use csPos
   let [(ax',ay'),(bx',by'),(cx',cy')] = map ((p +) . (realToFrac *** realToFrac))
                                           [(ax,ay),(bx,by),(cx,cy)]
-  canvas $ C.bezierCurveTo (ax',ay',bx',by',cx',cy')
-  move (cx',cy')
+  liftC $ BC.bezierCurveTo (ax',ay',bx',by',cx',cy')
+  move (cx', cy')
 
-stroke :: Render ()
+-- | Get an accumulated style attribute from the render monad state.
+getStyleAttrib :: AttributeClass a => (a -> b) -> RenderM (Maybe b)
+getStyleAttrib f = (fmap f . getAttr) <$> use accumStyle
+
+stroke :: RenderM ()
 stroke = do
 
   -- From the HTML5 canvas specification regarding line width:
@@ -134,17 +128,12 @@ stroke = do
   -- Hence we must implement a line width of zero by simply not
   -- sending a stroke command.
 
-  w <- gets (dsWidth . drawState)
-  when (w > 0) (canvas $ C.stroke ())
+  -- default value of 1 is arbitary, anything > 0 will do.
+  w <- fromMaybe 1 <$> getStyleAttrib (fromOutput . getLineWidth)
+  when (w > 0) (liftC $ BC.stroke ())
 
-fill :: Render ()
-fill = canvas $ C.fill ()
-
-save :: Render ()
-save = saveRS >> canvas (C.save ())
-
-restore :: Render ()
-restore = restoreRS >> canvas (C.restore ())
+fill :: RenderM ()
+fill = liftC $ BC.fill ()
 
 byteRange :: Double -> Word8
 byteRange d = floor (d * 255)
@@ -163,43 +152,18 @@ showColorJS c = T.concat
         s = T.pack . show . byteRange
         (r,g,b,a) = colorToSRGBA c
 
-setDSWhen :: (DrawState -> DrawState) -> Render () -> Render ()
-setDSWhen f r = do
-  d <- drawState <$> get
-  let d' = f d
-  when (d /= d') (setDS d' >> r)
+transform :: Double -> Double -> Double -> Double -> Double -> Double -> RenderM ()
+transform ax ay bx by tx ty = liftC $ BC.transform vs
+    where 
+      vs = (realToFrac ax,realToFrac ay
+           ,realToFrac bx,realToFrac by
+           ,realToFrac tx,realToFrac ty)
 
-transform :: Double -> Double -> Double -> Double -> Double -> Double -> Render ()
-transform ax ay bx by tx ty = setDSWhen
-                              (\ds -> ds { dsTransform = vs })
-                              (canvas $ C.transform vs)
-    where vs = (realToFrac ax,realToFrac ay,realToFrac bx,realToFrac by,realToFrac tx,realToFrac ty)
+strokeColor :: Texture -> RenderM ()
+strokeColor (SC (SomeColor c)) = liftC $ BC.strokeStyle (showColorJS c)
 
-strokeColor :: Texture -> Render ()
-strokeColor (SC (SomeColor c)) = setDSWhen
-                (\ds -> ds { dsStroke = colorToSRGBA c})
-                (canvas $ C.strokeStyle (showColorJS c))
-
-fillColor :: Texture  -> Render ()
-fillColor (SC (SomeColor c)) = setDSWhen
-              (\ds -> ds { dsFill = colorToSRGBA c })
-              (canvas $ C.fillStyle (showColorJS c))
-
-lineWidth :: Double -> Render ()
-lineWidth w = setDSWhen
-              (\ds -> ds { dsWidth = w' })
-              (canvas $ C.lineWidth w')
-  where w' = realToFrac w
-
-lineCap :: LineCap -> Render ()
-lineCap lc = setDSWhen
-             (\ds -> ds { dsCap = lc })
-             (canvas $ C.lineCap (fromLineCap lc))
-
-lineJoin :: LineJoin -> Render ()
-lineJoin lj = setDSWhen
-              (\ds -> ds { dsJoin = lj })
-              (canvas $ C.lineJoin (fromLineJoin lj))
+fillColor :: Texture  -> RenderM ()
+fillColor (SC (SomeColor c)) = liftC $ BC.fillStyle (showColorJS c)
 
 fromLineCap :: LineCap -> Text
 fromLineCap LineCapRound  = T.pack $ show "round"
@@ -211,26 +175,20 @@ fromLineJoin LineJoinRound = T.pack $ show "round"
 fromLineJoin LineJoinBevel = T.pack $ show "bevel"
 fromLineJoin _             = T.pack $ show "miter"
 
-globalAlpha :: Double -> Render ()
-globalAlpha a = setDSWhen
-                (\ds -> ds { dsAlpha = a' })
-                (canvas $ C.globalAlpha a')
-  where a' = realToFrac a
-
 -- TODO: update the transform's state for translate, scale, and rotate
-translate :: Double -> Double -> Render ()
-translate x y = canvas $ C.translate (realToFrac x,realToFrac y)
+-- translate :: Double -> Double -> Render ()
+-- translate x y = canvas $ BC.translate (realToFrac x,realToFrac y)
 
-scale :: Double -> Double -> Render ()
-scale x y = canvas $ C.scale (realToFrac x,realToFrac y)
+-- scale :: Double -> Double -> Render ()
+-- scale x y = canvas $ BC.scale (realToFrac x,realToFrac y)
 
-rotate :: Double -> Render ()
-rotate t = canvas $ C.rotate (realToFrac t)
+-- rotate :: Double -> Render ()
+-- rotate t = canvas $ BC.rotate (realToFrac t)
 
-withStyle :: Render () -> Render () -> Render () -> Render ()
-withStyle t s r = do
-  save
-  r >> t >> s
-  stroke
-  fill
-  restore
+-- withStyle :: Render () -> Render () -> Render () -> Render ()
+-- withStyle t s r = do
+  -- save
+  -- r >> t >> s
+  -- stroke
+  -- fill
+  -- restore
