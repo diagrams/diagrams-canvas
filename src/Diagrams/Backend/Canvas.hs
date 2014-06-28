@@ -79,10 +79,10 @@ toRender = fromRTree
       fromRTree (Node (RPrim p) _) = render Canvas p
       fromRTree (Node (RStyle sty) rs) = C $ do
         C.save
-        canvasStyle sty
-        -- canvasAccumStyle sty
         runC $ F.foldMap fromRTree rs
+        canvasStyle sty
         C.stroke
+        C.fill
         C.restore
       fromRTree (Node _ rs) = F.foldMap fromRTree rs
 
@@ -108,6 +108,8 @@ canvasStyle s = sequence_
               . catMaybes $ [ handle lWidth
                             , handle lJoin
                             , handle lCap
+                            , handle lColor
+                            , handle fColor
                             , handle opacity_
                             ]
   where handle :: (AttributeClass a) => (a -> C.Render ()) -> Maybe (C.Render ())
@@ -115,6 +117,8 @@ canvasStyle s = sequence_
         lWidth = C.lineWidth . fromOutput .  getLineWidth
         lCap = C.lineCap . getLineCap
         lJoin = C.lineJoin . getLineJoin
+        lColor = C.strokeColor . getLineTexture
+        fColor = C.fillColor . getFillTexture
         opacity_ = C.globalAlpha . getOpacity
 
 canvasTransf :: Transformation R2 -> C.Render ()
@@ -141,24 +145,8 @@ instance Renderable (Trail R2) Canvas where
           _ -> mapM_ renderC (lineSegments . cutLoop $ lp)
         C.closePath
 
-canvasPath :: Path R2 -> C.Render ()
-canvasPath (Path trs) = do
-    C.newPath
-    F.mapM_ renderTrail trs
-  where
-    renderTrail (viewLoc -> (unp2 -> p, tr)) = do
-      uncurry C.moveTo p
-      renderC tr
-
 instance Renderable (Path R2) Canvas where
-  render _ p = C $ do
-    canvasPath p
-    -- Follow cairo except don't use ignoreFill since we are using
-    -- splitTextures.
-
-    -- f <- getStyleAttrib getFillTexture
-    -- s <- getStyleAttrib getLineTexture
-    -- setTexture f
-    -- when (isJust f) $ C.fillPreserve
-    -- setTexture s
-    C.stroke    
+  render _ (Path trs) = C $ C.newPath >> F.mapM_ renderTrail trs
+    where renderTrail (viewLoc -> (unp2 -> p, tr)) = do
+            uncurry C.moveTo p
+            renderC tr
