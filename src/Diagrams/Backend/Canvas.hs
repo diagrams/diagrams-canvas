@@ -117,16 +117,6 @@ canvasStyle s = sequence_
         lJoin = C.lineJoin . getLineJoin
         opacity_ = C.globalAlpha . getOpacity
 
-canvasAccumStyle :: Style v -> C.Render ()
-canvasAccumStyle s = sequence_
-                   . catMaybes $ [ handle lColor
-                                 , handle fColor
-                                 ]
-  where handle :: (AttributeClass a) => (a -> C.Render ()) -> Maybe (C.Render ())
-        handle f = f `fmap` getAttr s
-        lColor = C.strokeColor . getLineTexture
-        fColor = C.fillColor . getFillTexture
-
 canvasTransf :: Transformation R2 -> C.Render ()
 canvasTransf t = C.transform a1 a2 b1 b2 c1 c2
   where (unr2 -> (a1,a2)) = apply t unitX
@@ -151,8 +141,24 @@ instance Renderable (Trail R2) Canvas where
           _ -> mapM_ renderC (lineSegments . cutLoop $ lp)
         C.closePath
 
+canvasPath :: Path R2 -> C.Render ()
+canvasPath (Path trs) = do
+    C.newPath
+    F.mapM_ renderTrail trs
+  where
+    renderTrail (viewLoc -> (unp2 -> p, tr)) = do
+      uncurry C.moveTo p
+      renderC tr
+
 instance Renderable (Path R2) Canvas where
-  render _ (Path trs) = C $ C.newPath >> F.mapM_ renderTrail trs
-    where renderTrail (viewLoc -> (unp2 -> p, tr)) = do
-            uncurry C.moveTo p
-            renderC tr
+  render _ p = C $ do
+    canvasPath p
+    -- Follow cairo except don't use ignoreFill since we are using
+    -- splitTextures.
+
+    -- f <- getStyleAttrib getFillTexture
+    -- s <- getStyleAttrib getLineTexture
+    -- setTexture f
+    -- when (isJust f) $ C.fillPreserve
+    -- setTexture s
+    C.stroke    
