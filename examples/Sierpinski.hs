@@ -16,6 +16,6 @@ sierpinski n =     s
                (s ||| s) # centerX
   where s = sierpinski (n-1)
 
-example = pad 1.1 $ sierpinski 7 # centerXY # lw 0 # fc black
+example = pad 1.1 $ sierpinski 7 # centerXY # lw none # fc black
 
 main = defaultMain example
