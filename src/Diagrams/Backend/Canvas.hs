@@ -18,14 +18,13 @@ module Diagrams.Backend.Canvas
   , Options(..) -- for rendering options specific to Canvas
   ) where
 
-import           Control.Lens                 hiding (transform, ( # ))
-import           Control.Monad                (when)
-import           Control.Monad.State
+import           Control.Lens                 (Lens', (%=), lens, (^.))
+import           Control.Monad.State          (when, State, evalState)
 
 import qualified Data.Foldable as F
 import           Data.Maybe                   (catMaybes, isJust, fromJust, fromMaybe)
-import           Data.Tree
-import           Data.Typeable
+import           Data.Tree                    (Tree(Node))
+import           Data.Typeable                (Typeable)
 
 import           Diagrams.Prelude
 import           Diagrams.TwoD.Adjust         (adjustDia2D)
@@ -35,7 +34,6 @@ import           Diagrams.TwoD.Types          (R2(..))
 import           Diagrams.Core.Compile
 import           Diagrams.Core.Types          (Annotation (..))
 import           Diagrams.TwoD.Size           (sizePair)
-import           Diagrams.TwoD.Text
 
 import qualified Graphics.Blank as BC
 import qualified Graphics.Rendering.Canvas as C

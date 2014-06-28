@@ -20,38 +20,31 @@ module Graphics.Rendering.Canvas
   , transform
   , save
   , restore
-  , translate
-  , scale
-  , rotate
   , strokeColor
   , fillColor
-  , lineWidth
   , fromLineCap
   , fromLineJoin
   ) where
 
 import           Control.Applicative      ((<$>))
 import           Control.Arrow            ((***))
-import           Control.Lens hiding      (transform, (#))
+import           Control.Lens             (makeLenses, (.=), use)
 import           Control.Monad.State
 import qualified Control.Monad.StateStack as SS
 
-import           Data.Default.Class
+import           Data.Default.Class       (Default(..))
 import           Data.Maybe (fromMaybe)
 import           Data.NumInstances        ()
-import qualified Data.Text as T
-import           Data.Text (Text)
-import           Data.Word(Word8)
+import qualified Data.Text                as T
+import           Data.Text                (Text)
+import           Data.Word                (Word8)
 
-import           Diagrams.Prelude         hiding (font, moveTo, arc, stroke, 
-                                                  fillColor, transform)
+import           Diagrams.Prelude         (Monoid(mempty))
 import           Diagrams.Attributes      (Color(..),LineCap(..),LineJoin(..), 
                                           SomeColor(..), colorToSRGBA)
-import           Diagrams.Core.Style      (Style)
-import           Diagrams.Core.Compile
-import           Diagrams.Core.Types
-import           Diagrams.Core.Transform  hiding (transform)
-import           Diagrams.TwoD.Attributes (Texture(..))
+import           Diagrams.Core.Style      (Style, AttributeClass, getAttr)
+import           Diagrams.Core.Types      (fromOutput)
+import           Diagrams.TwoD.Attributes (Texture(..), getLineWidth)
 import           Diagrams.TwoD.Types      (R2(..))
 import qualified Graphics.Blank           as BC
 
