@@ -30,39 +30,39 @@ module Graphics.Rendering.Canvas
   , fromLineJoin
   ) where
 
-import           Control.Applicative((<$>))
-import           Control.Arrow ((***))
-import           Control.Lens hiding (transform, (#))
+import           Control.Applicative      ((<$>))
+import           Control.Arrow            ((***))
+import           Control.Lens hiding      (transform, (#))
 import           Control.Monad.State
+import qualified Control.Monad.StateStack as SS
+
 import           Data.Default.Class
 import           Data.Maybe (fromMaybe)
-import           Data.NumInstances ()
+import           Data.NumInstances        ()
+import qualified Data.Text as T
+import           Data.Text (Text)
 import           Data.Word(Word8)
-import           Diagrams.Prelude hiding (font, moveTo, arc, stroke, fillColor,
-                                          transform)
 
-import           Diagrams.Attributes(Color(..),LineCap(..),LineJoin(..), 
-                                     SomeColor(..), colorToSRGBA)
-import           Diagrams.Core.Style           (Style)
+import           Diagrams.Prelude         hiding (font, moveTo, arc, stroke, 
+                                                  fillColor, transform)
+import           Diagrams.Attributes      (Color(..),LineCap(..),LineJoin(..), 
+                                          SomeColor(..), colorToSRGBA)
+import           Diagrams.Core.Style      (Style)
 import           Diagrams.Core.Compile
 import           Diagrams.Core.Types
 import           Diagrams.Core.Transform  hiding (transform)
 import           Diagrams.TwoD.Attributes (Texture(..))
 import           Diagrams.TwoD.Types      (R2(..))
-import qualified Graphics.Blank as BC
-import qualified Data.Text as T
-import           Data.Text (Text)
-import           Control.Applicative
-import qualified Control.Monad.StateStack as SS
+import qualified Graphics.Blank           as BC
 
 data CanvasState = CanvasState { _accumStyle :: Style R2
-                               , _csPos :: (Float, Float)}
+                               , _csPos :: (Float, Float) }
 
 makeLenses ''CanvasState
 
 instance Default CanvasState where
   def = CanvasState { _accumStyle = mempty
-                    , _csPos = (0,0)}
+                    , _csPos = (0,0) }
 
 type RenderM a = SS.StateStackT CanvasState BC.Canvas a
 
@@ -88,7 +88,8 @@ closePath :: RenderM ()
 closePath = liftC $ BC.closePath ()
 
 arc :: Double -> Double -> Double -> Double -> Double -> RenderM ()
-arc a b c d e = liftC $ BC.arc (realToFrac a, realToFrac b, realToFrac c, realToFrac d, realToFrac e,True)
+arc a b c d e = liftC $ BC.arc ( realToFrac a, realToFrac b, realToFrac c
+                               , realToFrac d, realToFrac e,True)
 
 moveTo :: Double -> Double -> RenderM ()
 moveTo x y = do
@@ -175,20 +176,3 @@ fromLineJoin LineJoinRound = T.pack $ show "round"
 fromLineJoin LineJoinBevel = T.pack $ show "bevel"
 fromLineJoin _             = T.pack $ show "miter"
 
--- TODO: update the transform's state for translate, scale, and rotate
--- translate :: Double -> Double -> Render ()
--- translate x y = canvas $ BC.translate (realToFrac x,realToFrac y)
-
--- scale :: Double -> Double -> Render ()
--- scale x y = canvas $ BC.scale (realToFrac x,realToFrac y)
-
--- rotate :: Double -> Render ()
--- rotate t = canvas $ BC.rotate (realToFrac t)
-
--- withStyle :: Render () -> Render () -> Render () -> Render ()
--- withStyle t s r = do
-  -- save
-  -- r >> t >> s
-  -- stroke
-  -- fill
-  -- restore

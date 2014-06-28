@@ -9,40 +9,40 @@
            , InstanceSigs
            , ScopedTypeVariables
   #-}
-{-|
-  The Canvas backend.
--}
+
+-- The Canvas backend.
+
 module Diagrams.Backend.Canvas
 
   ( Canvas(..) -- rendering token
-
   , Options(..) -- for rendering options specific to Canvas
   ) where
 
-import           Data.Tree
-import           Control.Monad (when)
-import qualified Data.Foldable as F
-import           Data.Maybe (catMaybes, isJust, fromJust, fromMaybe)
-import           Data.Typeable
 import           Control.Lens                 hiding (transform, ( # ))
+import           Control.Monad                (when)
 import           Control.Monad.State
+
+import qualified Data.Foldable as F
+import           Data.Maybe                   (catMaybes, isJust, fromJust, fromMaybe)
+import           Data.Tree
 import           Data.Typeable
-import           GHC.Generics                 (Generic)
 
 import           Diagrams.Prelude
-import           Diagrams.TwoD.Adjust (adjustDia2D)
+import           Diagrams.TwoD.Adjust         (adjustDia2D)
 import           Diagrams.TwoD.Attributes     (splitTextureFills)
 import           Diagrams.TwoD.Types          (R2(..))
-import qualified Graphics.Blank as BC
-import qualified Graphics.Rendering.Canvas as C
-import           Graphics.Rendering.Canvas    (liftC, getStyleAttrib, accumStyle)
+
 import           Diagrams.Core.Compile
 import           Diagrams.Core.Types          (Annotation (..))
 import           Diagrams.TwoD.Size           (sizePair)
 import           Diagrams.TwoD.Text
 
+import qualified Graphics.Blank as BC
+import qualified Graphics.Rendering.Canvas as C
+import           Graphics.Rendering.Canvas    (liftC, getStyleAttrib, accumStyle)
 
--- | This data declaration is simply used as a token to distinguish this rendering engine.
+-- | This data declaration is simply used as a token to distinguish 
+--   this rendering engine.
 data Canvas = Canvas
     deriving Typeable
 
@@ -57,7 +57,8 @@ instance Backend Canvas R2 where
           { _canvasSize   :: SizeSpec2D   -- ^ the requested size
           }
 
-  renderRTree :: Canvas -> Options Canvas R2 -> RTree Canvas R2 Annotation -> Result Canvas R2
+  renderRTree :: Canvas -> Options Canvas R2 -> RTree Canvas R2 Annotation 
+                        -> Result Canvas R2
   renderRTree _ opts rt = evalState canvasOutput initialCanvasRenderState
     where
       canvasOutput :: State CanvasRenderState (BC.Canvas ())
