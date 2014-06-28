@@ -32,7 +32,9 @@ import           Control.Arrow ((***))
 import           Control.Monad.State
 import           Data.NumInstances ()
 import           Data.Word(Word8)
-import           Diagrams.Attributes(Color(..),LineCap(..),LineJoin(..))
+import           Diagrams.Attributes(Color(..),LineCap(..),LineJoin(..), 
+                                     SomeColor(..), colorToSRGBA)
+import           Diagrams.TwoD.Attributes (Texture(..))
 import qualified Graphics.Blank as C
 import qualified Data.Text as T
 import           Data.Text (Text)
@@ -159,7 +161,7 @@ showColorJS c = T.concat
 
   where s :: Double -> Text
         s = T.pack . show . byteRange
-        (r,g,b,a) = colorToRGBA c
+        (r,g,b,a) = colorToSRGBA c
 
 setDSWhen :: (DrawState -> DrawState) -> Render () -> Render ()
 setDSWhen f r = do
@@ -173,14 +175,14 @@ transform ax ay bx by tx ty = setDSWhen
                               (canvas $ C.transform vs)
     where vs = (realToFrac ax,realToFrac ay,realToFrac bx,realToFrac by,realToFrac tx,realToFrac ty)
 
-strokeColor :: (Color c) => c -> Render ()
-strokeColor c = setDSWhen
-                (\ds -> ds { dsStroke = colorToRGBA c})
+strokeColor :: Texture -> Render ()
+strokeColor (SC (SomeColor c)) = setDSWhen
+                (\ds -> ds { dsStroke = colorToSRGBA c})
                 (canvas $ C.strokeStyle (showColorJS c))
 
-fillColor :: (Color c) => c -> Render ()
-fillColor c = setDSWhen
-              (\ds -> ds { dsFill = colorToRGBA c })
+fillColor :: Texture  -> Render ()
+fillColor (SC (SomeColor c)) = setDSWhen
+              (\ds -> ds { dsFill = colorToSRGBA c })
               (canvas $ C.fillStyle (showColorJS c))
 
 lineWidth :: Double -> Render ()
@@ -232,26 +234,3 @@ withStyle t s r = do
   stroke
   fill
   restore
-
-colorToRGBA :: (Color c) => c -> RGBA
-colorToRGBA = error "colorToRGBA"
-
-{-
-renderPath :: Path R2 -> S.Svg
-renderPath trs  = S.path ! A.d makePath
-  where
-    makePath = mkPath $ mapM_ renderTrail (op Path trs)
-
-renderTrail :: Located (Trail R2) -> S.Path
-renderTrail (viewLoc -> (unp2 -> (x,y), t)) = m x y >> withTrail renderLine renderLoop t
-  where
-    renderLine = mapM_ renderSeg . lineSegments
-    renderLoop lp = do
-      case loopSegments lp of
-        -- let 'z' handle the last segment if it is linear
-        (segs, Linear _) -> mapM_ renderSeg segs
-
-        -- otherwise we have to emit it explicitly
-        _ -> mapM_ renderSeg (lineSegments . cutLoop $ lp)
-      z
--}

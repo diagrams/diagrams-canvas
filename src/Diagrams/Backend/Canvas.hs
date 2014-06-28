@@ -65,10 +65,10 @@ instance Backend Canvas R2 where
             (w,h) = sizePair (opts^.size)
                     -- This is where you can mess with the size
         return $ C.doRender $ r
---  adjustDia c opts d = adjustDia2D size c opts (d # reflectY)
-  adjustDia c opts d = adjustDia2D size c opts
-                       (d # reflectY # fcA transparent) --  # lw 0.01)
+  adjustDia c opts d = adjustDia2D size c opts (d # reflectY)
 
+runC :: Render Canvas R2 -> C.Render ()
+runC (C r) = r
 
 toRender :: RTree Canvas R2 Annotation -> Render Canvas R2
 toRender = fromRTree
@@ -76,42 +76,15 @@ toRender = fromRTree
   . (:[])
   . splitTextureFills
     where
-{-
-      fromRTree (Node (RAnnot (Href uri)) rs)
-        = R $ do
-            let R r =  foldMap fromRTree rs
-            svg <- r
-            return $ (S.a ! xlinkHref (S.toValue uri)) svg
--}
       fromRTree (Node (RPrim p) _) = render Canvas p
-      fromRTree (Node (RStyle sty) rs) = F.foldMap fromRTree rs
-{-
-      fromRTree (Node (RStyle sty) ts)
-        = R $ do
-            let R r = foldMap fromRTree ts
-
-            -- save current setting for local text
-            oldIsLocal <- use isLocalText
-            -- check if this style speficies a font size in Local units
-            case getFontSizeIsLocal <$> getAttr sty of
-              Nothing      -> return ()
-              Just isLocal -> isLocalText .= isLocal
-            -- render subtrees
-            svg <- r
-            -- restore the old setting for local text
-            isLocalText .= oldIsLocal
-
-            idFill <- use fillGradId
-            idLine <- use lineGradId
-            clippedSvg <- renderSvgWithClipping svg sty
-            lineGradDefs <- lineTextureDefs sty
-            fillGradDefs <- fillTextureDefs sty
-            let textureDefs = fillGradDefs `mappend` lineGradDefs
-            return $ (S.g ! R.renderStyles idFill idLine sty)
-                     (textureDefs `mappend` clippedSvg)
--}
+      fromRTree (Node (RStyle sty) rs) = C $ do
+        C.save
+        canvasStyle sty
+        -- canvasAccumStyle sty
+        runC $ F.foldMap fromRTree rs
+        C.stroke
+        C.restore
       fromRTree (Node _ rs) = F.foldMap fromRTree rs
-
 
 data CanvasRenderState = CanvasRenderState
 
@@ -131,25 +104,28 @@ renderC :: (Renderable a Canvas, V a ~ R2) => a -> C.Render ()
 renderC a = case (render Canvas a) of C r -> r
 
 canvasStyle :: Style v -> C.Render ()
-canvasStyle = undefined
-{-
-canvasStyle s = foldr (>>) (return ())
-              . catMaybes $ [ {-handle fColor
-                            , handle lColor
-                            , -}handle lWidth
+canvasStyle s = sequence_
+              . catMaybes $ [ handle lWidth
                             , handle lJoin
                             , handle lCap
                             , handle opacity_
                             ]
   where handle :: (AttributeClass a) => (a -> C.Render ()) -> Maybe (C.Render ())
         handle f = f `fmap` getAttr s
---        lColor = C.strokeColor . getLineColor 
---        fColor = C.fillColor . getFillColor 
-        lWidth = C.lineWidth . getLineWidth
+        lWidth = C.lineWidth . fromOutput .  getLineWidth
         lCap = C.lineCap . getLineCap
         lJoin = C.lineJoin . getLineJoin
         opacity_ = C.globalAlpha . getOpacity
--}
+
+canvasAccumStyle :: Style v -> C.Render ()
+canvasAccumStyle s = sequence_
+                   . catMaybes $ [ handle lColor
+                                 , handle fColor
+                                 ]
+  where handle :: (AttributeClass a) => (a -> C.Render ()) -> Maybe (C.Render ())
+        handle f = f `fmap` getAttr s
+        lColor = C.strokeColor . getLineTexture
+        fColor = C.fillColor . getFillTexture
 
 canvasTransf :: Transformation R2 -> C.Render ()
 canvasTransf t = C.transform a1 a2 b1 b2 c1 c2
