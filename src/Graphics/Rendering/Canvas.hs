@@ -17,6 +17,7 @@ module Graphics.Rendering.Canvas
   , closePath
   , stroke
   , fill
+  , clip
   , transform
   , save
   , restore
@@ -128,6 +129,9 @@ stroke = do
 
 fill :: RenderM ()
 fill = liftC $ BC.fill ()
+
+clip :: RenderM ()
+clip = liftC $ BC.clip ()
 
 byteRange :: Double -> Word8
 byteRange d = floor (d * 255)

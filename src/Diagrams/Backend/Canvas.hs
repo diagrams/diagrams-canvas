@@ -18,7 +18,7 @@ module Diagrams.Backend.Canvas
   , Options(..) -- for rendering options specific to Canvas
   ) where
 
-import           Control.Lens                 (Lens', (%=), lens, (^.))
+import           Control.Lens                 (Lens', (%=), lens, (^.), op)
 import           Control.Monad.State          (when, State, evalState)
 
 import qualified Data.Foldable as F
@@ -29,6 +29,7 @@ import           Data.Typeable                (Typeable)
 import           Diagrams.Prelude
 import           Diagrams.TwoD.Adjust         (adjustDia2D)
 import           Diagrams.TwoD.Attributes     (splitTextureFills)
+import           Diagrams.TwoD.Path           (Clip (Clip), getFillRule)
 import           Diagrams.TwoD.Types          (R2(..))
 
 import           Diagrams.Core.Compile
@@ -112,6 +113,7 @@ canvasStyle s = sequence_
                             ]
   where handle :: (AttributeClass a) => (a -> C.RenderM ()) -> Maybe (C.RenderM ())
         handle f = f `fmap` getAttr s
+        clip     = mapM_ (\p -> canvasPath p >> C.clip) . op Clip
         lWidth = liftC . BC.lineWidth . realToFrac . fromOutput . getLineWidth
         lCap = liftC . BC.lineCap . C.fromLineCap . getLineCap
         lJoin = liftC .  BC.lineJoin . C.fromLineJoin . getLineJoin
