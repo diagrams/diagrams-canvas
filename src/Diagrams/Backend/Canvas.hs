@@ -2,6 +2,7 @@
            , MultiParamTypeClasses
            , FlexibleInstances
            , FlexibleContexts
+           , GADTs
            , TypeSynonymInstances
            , DeriveDataTypeable
            , ViewPatterns
@@ -31,6 +32,7 @@ import           GHC.Generics                 (Generic)
 import           Diagrams.Prelude
 import           Diagrams.TwoD.Adjust (adjustDia2D)
 import           Diagrams.TwoD.Attributes     (splitTextureFills)
+import           Diagrams.TwoD.Types          (R2(..))
 import qualified Graphics.Blank as BC
 import qualified Graphics.Rendering.Canvas as C
 import           Diagrams.Core.Compile
@@ -63,10 +65,10 @@ instance Backend Canvas R2 where
             (w,h) = sizePair (opts^.size)
                     -- This is where you can mess with the size
         return $ C.doRender $ r
---  adjustDia c opts d = adjustDia2D size c opts (d # reflectY)
-  adjustDia c opts d = adjustDia2D size c opts
-                       (d # reflectY # fcA transparent) --  # lw 0.01)
+  adjustDia c opts d = adjustDia2D size c opts (d # reflectY)
 
+runC :: Render Canvas R2 -> C.Render ()
+runC (C r) = r
 
 toRender :: RTree Canvas R2 Annotation -> Render Canvas R2
 toRender = fromRTree
@@ -74,41 +76,15 @@ toRender = fromRTree
   . (:[])
   . splitTextureFills
     where
-{-
-      fromRTree (Node (RAnnot (Href uri)) rs)
-        = R $ do
-            let R r =  foldMap fromRTree rs
-            svg <- r
-            return $ (S.a ! xlinkHref (S.toValue uri)) svg
--}
       fromRTree (Node (RPrim p) _) = render Canvas p
-{-
-      fromRTree (Node (RStyle sty) ts)
-        = R $ do
-            let R r = foldMap fromRTree ts
-
-            -- save current setting for local text
-            oldIsLocal <- use isLocalText
-            -- check if this style speficies a font size in Local units
-            case getFontSizeIsLocal <$> getAttr sty of
-              Nothing      -> return ()
-              Just isLocal -> isLocalText .= isLocal
-            -- render subtrees
-            svg <- r
-            -- restore the old setting for local text
-            isLocalText .= oldIsLocal
-
-            idFill <- use fillGradId
-            idLine <- use lineGradId
-            clippedSvg <- renderSvgWithClipping svg sty
-            lineGradDefs <- lineTextureDefs sty
-            fillGradDefs <- fillTextureDefs sty
-            let textureDefs = fillGradDefs `mappend` lineGradDefs
-            return $ (S.g ! R.renderStyles idFill idLine sty)
-                     (textureDefs `mappend` clippedSvg)
--}
+      fromRTree (Node (RStyle sty) rs) = C $ do
+        C.save
+        runC $ F.foldMap fromRTree rs
+        canvasStyle sty
+        C.stroke
+        C.fill
+        C.restore
       fromRTree (Node _ rs) = F.foldMap fromRTree rs
-
 
 data CanvasRenderState = CanvasRenderState
 
@@ -128,25 +104,22 @@ renderC :: (Renderable a Canvas, V a ~ R2) => a -> C.Render ()
 renderC a = case (render Canvas a) of C r -> r
 
 canvasStyle :: Style v -> C.Render ()
-canvasStyle = undefined
-{-
-canvasStyle s = foldr (>>) (return ())
-              . catMaybes $ [ {-handle fColor
-                            , handle lColor
-                            , -}handle lWidth
+canvasStyle s = sequence_
+              . catMaybes $ [ handle lWidth
                             , handle lJoin
                             , handle lCap
+                            , handle lColor
+                            , handle fColor
                             , handle opacity_
                             ]
   where handle :: (AttributeClass a) => (a -> C.Render ()) -> Maybe (C.Render ())
         handle f = f `fmap` getAttr s
---        lColor = C.strokeColor . getLineColor 
---        fColor = C.fillColor . getFillColor 
-        lWidth = C.lineWidth . getLineWidth
+        lWidth = C.lineWidth . fromOutput .  getLineWidth
         lCap = C.lineCap . getLineCap
         lJoin = C.lineJoin . getLineJoin
+        lColor = C.strokeColor . getLineTexture
+        fColor = C.fillColor . getFillTexture
         opacity_ = C.globalAlpha . getOpacity
--}
 
 canvasTransf :: Transformation R2 -> C.Render ()
 canvasTransf t = C.transform a1 a2 b1 b2 c1 c2
@@ -154,37 +127,26 @@ canvasTransf t = C.transform a1 a2 b1 b2 c1 c2
         (unr2 -> (b1,b2)) = apply t unitY
         (unr2 -> (c1,c2)) = transl t
 
-{-
-instance Renderable (Segment R2) Canvas where
-  render _ (Linear v) = C $ uncurry C.relLineTo (unr2 v)
-  render _ (Cubic (unr2 -> (x1,y1))
-                  (unr2 -> (x2,y2))
-                  (unr2 -> (x3,y3)))
+instance Renderable (Segment Closed R2) Canvas where
+  render _ (Linear (OffsetClosed (R2 x y))) = C $ C.relLineTo x y
+  render _ (Cubic (R2 x1 y1)
+                  (R2 x2 y2)
+                  (OffsetClosed (R2 x3 y3)))
     = C $ C.relCurveTo x1 y1 x2 y2 x3 y3
--}
 
-{-
 instance Renderable (Trail R2) Canvas where
-  render _ (Trail segs c) = C $ do
-    mapM_ renderC segs
-    when c $ C.closePath
--}
-
-
-instance Renderable (Path R2) Canvas where
-  render :: Canvas -> Path R2 -> Render Canvas (V (Path R2))
-  render _  = C . C.renderPath 
-
-
-{-
--- newtype Path R2 = Path [Located (Trail R2)]
--- Located (Trail R2)
--- Located a = Loc { loc :: Point (V a), unLoc a:: a }
---  viewLoc :: Located a -> (Point (V a), a)
+  render _ = withTrail renderLine renderLoop
+    where
+      renderLine ln = C $ do
+        mapM_ renderC (lineSegments ln)
+      renderLoop lp = C $ do
+        case loopSegments lp of
+          (segs, Linear _) -> mapM_ renderC segs
+          _ -> mapM_ renderC (lineSegments . cutLoop $ lp)
+        C.closePath
 
 instance Renderable (Path R2) Canvas where
   render _ (Path trs) = C $ C.newPath >> F.mapM_ renderTrail trs
-    where renderTrail (unp2 -> p, tr) = do
+    where renderTrail (viewLoc -> (unp2 -> p, tr)) = do
             uncurry C.moveTo p
             renderC tr
--}
