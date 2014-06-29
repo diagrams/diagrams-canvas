@@ -13,7 +13,6 @@ module Graphics.Rendering.Canvas
   , moveTo
   , relLineTo
   , relCurveTo
-  , arc
   , closePath
   , stroke
   , fill
@@ -80,10 +79,6 @@ newPath = liftC $ BC.beginPath ()
 
 closePath :: RenderM ()
 closePath = liftC $ BC.closePath ()
-
-arc :: Double -> Double -> Double -> Double -> Double -> RenderM ()
-arc a b c d e = liftC $ BC.arc ( realToFrac a, realToFrac b, realToFrac c
-                               , realToFrac d, realToFrac e,True)
 
 moveTo :: Double -> Double -> RenderM ()
 moveTo x y = do

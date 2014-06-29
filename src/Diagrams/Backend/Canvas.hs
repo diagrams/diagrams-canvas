@@ -18,7 +18,7 @@ module Diagrams.Backend.Canvas
   , Options(..) -- for rendering options specific to Canvas
   ) where
 
-import           Control.Lens                 (Lens', (%=), lens, (^.), op)
+import           Control.Lens                 (Lens', (%=), lens, op)
 import           Control.Monad.State          (when, State, evalState)
 
 import qualified Data.Foldable as F
@@ -29,12 +29,11 @@ import           Data.Typeable                (Typeable)
 import           Diagrams.Prelude
 import           Diagrams.TwoD.Adjust         (adjustDia2D)
 import           Diagrams.TwoD.Attributes     (splitTextureFills)
-import           Diagrams.TwoD.Path           (Clip (Clip), getFillRule)
+import           Diagrams.TwoD.Path           (Clip (Clip))
 import           Diagrams.TwoD.Types          (R2(..))
 
 import           Diagrams.Core.Compile
 import           Diagrams.Core.Types          (Annotation (..))
-import           Diagrams.TwoD.Size           (sizePair)
 
 import qualified Graphics.Blank as BC
 import qualified Graphics.Rendering.Canvas as C
@@ -58,14 +57,13 @@ instance Backend Canvas R2 where
 
   renderRTree :: Canvas -> Options Canvas R2 -> RTree Canvas R2 Annotation 
                         -> Result Canvas R2
-  renderRTree _ opts rt = evalState canvasOutput initialCanvasRenderState
+  renderRTree _ _ rt = evalState canvasOutput initialCanvasRenderState
     where
       canvasOutput :: State CanvasRenderState (BC.Canvas ())
       canvasOutput = do
         let C r = toRender rt
-            (w,h) = sizePair (opts^.size)
-                    -- This is where you can mess with the size
         return $ C.runRenderM $ r
+
   adjustDia c opts d = adjustDia2D size c opts (d # reflectY)
 
 runC :: Render Canvas R2 -> C.RenderM ()
@@ -110,6 +108,7 @@ canvasStyle s = sequence_
                             , handle lJoin
                             , handle lCap
                             , handle opacity_
+                            , handle clip
                             ]
   where handle :: (AttributeClass a) => (a -> C.RenderM ()) -> Maybe (C.RenderM ())
         handle f = f `fmap` getAttr s
@@ -119,11 +118,11 @@ canvasStyle s = sequence_
         lJoin = liftC .  BC.lineJoin . C.fromLineJoin . getLineJoin
         opacity_ = liftC . BC.globalAlpha . realToFrac . getOpacity
 
-canvasTransf :: Transformation R2 -> C.RenderM ()
-canvasTransf t = C.transform a1 a2 b1 b2 c1 c2
-  where (unr2 -> (a1,a2)) = apply t unitX
-        (unr2 -> (b1,b2)) = apply t unitY
-        (unr2 -> (c1,c2)) = transl t
+-- canvasTransf :: Transformation R2 -> C.RenderM ()
+-- canvasTransf t = C.transform a1 a2 b1 b2 c1 c2
+  -- where (unr2 -> (a1,a2)) = apply t unitX
+        -- (unr2 -> (b1,b2)) = apply t unitY
+        -- (unr2 -> (c1,c2)) = transl t
 
 instance Renderable (Segment Closed R2) Canvas where
   render _ (Linear (OffsetClosed (R2 x y))) = C $ C.relLineTo x y
@@ -149,7 +148,7 @@ instance Renderable (Path R2) Canvas where
     f <- getStyleAttrib getFillTexture
     s <- getStyleAttrib getLineTexture
     when (isJust f) (C.fillColor (fromJust f) >> C.fill)
-    C.strokeColor (fromMaybe (SC (SomeColor black)) s)
+    C.strokeColor (fromMaybe (SC (SomeColor (black :: Colour Double))) s)
     C.stroke
 
 -- Add a path to the Canvas context, without stroking or filling it.
