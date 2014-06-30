@@ -22,6 +22,7 @@ module Graphics.Rendering.Canvas
   , restore
   , strokeTexture
   , fillTexture
+  , showColorJS
   , showFontJS
   , fromLineCap
   , fromLineJoin

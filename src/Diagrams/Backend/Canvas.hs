@@ -166,11 +166,25 @@ instance Renderable Text Canvas where
     fs      <- fromMaybe 12 <$> getStyleAttrib (fromOutput . getFontSize)
     slant   <- fromMaybe FontSlantNormal <$> getStyleAttrib getFontSlant
     fw      <- fromMaybe FontWeightNormal <$> getStyleAttrib getFontWeight
-    f       <- fromMaybe (SC (SomeColor (black :: Colour Double)))
+    tx      <- fromMaybe (SC (SomeColor (black :: Colour Double)))
                <$> getStyleAttrib getFillTexture
     let fnt = C.showFontJS fw slant fs tf
         tr  = if isLocal then tt else tn
-    C.liftC $ BC.textAlign (T.pack "center")
+        vAlign = case al of
+                   BaselineText -> T.pack "alphabetic"
+                   BoxAlignedText _ h -> case h of
+                     h' | h' <= 0.25 -> T.pack "bottom"
+                     h' | h' >= 0.75 -> T.pack "top"
+                     _ -> T.pack "middle"
+        hAlign = case al of
+                   BaselineText -> T.pack "start"
+                   BoxAlignedText w _ -> case w of
+                     w' | w' <= 0.25 -> T.pack "start"
+                     w' | w' >= 0.75 -> T.pack "end"
+                     _ -> T.pack "center"
+    C.liftC $ BC.textBaseline vAlign
+    C.liftC $ BC.textAlign hAlign
     C.liftC $ BC.font fnt
+    C.strokeTexture tx
     C.canvasTransform (tr <> reflectionY)
     C.liftC $ BC.fillText (T.pack str, 0, 0)
