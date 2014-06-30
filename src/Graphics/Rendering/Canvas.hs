@@ -17,11 +17,12 @@ module Graphics.Rendering.Canvas
   , stroke
   , fill
   , clip
-  , transform
+  , canvasTransform
   , save
   , restore
   , strokeTexture
   , fillTexture
+  , showFontJS
   , fromLineCap
   , fromLineJoin
   ) where
@@ -46,7 +47,8 @@ import           Diagrams.Core.Style      (Style, AttributeClass, getAttr)
 import           Diagrams.Core.Transform
 import           Diagrams.Core.Types      (fromOutput)
 import           Diagrams.TwoD.Attributes hiding (fillTexture)
-import           Diagrams.TwoD.Types      (R2(..), unp2)
+import           Diagrams.TwoD.Text       hiding (Text)
+import           Diagrams.TwoD.Types      (R2(..), unp2, T2)
 import qualified Graphics.Blank           as BC
 import qualified Graphics.Blank.Style     as S
 
@@ -183,12 +185,13 @@ showColorJS c = T.concat
         s = T.pack . show . byteRange
         (r,g,b,a) = colorToSRGBA c
 
--- transform :: Double -> Double -> Double -> Double -> Double -> Double -> RenderM ()
--- transform ax ay bx by tx ty = liftC $ BC.transform vs
-    -- where 
-      -- vs = (realToFrac ax,realToFrac ay
-           -- ,realToFrac bx,realToFrac by
-           -- ,realToFrac tx,realToFrac ty)
+canvasTransform :: T2 -> RenderM ()
+canvasTransform tr = liftC $ BC.transform vs
+    where 
+      [[ax, ay], [bx, by], [tx, ty]] = matrixHomRep tr
+      vs = (realToFrac ax,realToFrac ay
+           ,realToFrac bx,realToFrac by
+           ,realToFrac tx,realToFrac ty)
 
 strokeTexture :: Texture -> RenderM ()
 strokeTexture = texture Line
@@ -206,3 +209,15 @@ fromLineJoin LineJoinRound = "round"
 fromLineJoin LineJoinBevel = "bevel"
 fromLineJoin _             = "miter"
 
+showFontJS :: FontWeight -> FontSlant -> Double -> String -> Text
+showFontJS wgt slant size fnt = T.concat [a, " ", b, " ", c, " ", d]
+  where
+    a = case wgt of
+          FontWeightNormal -> ""
+          FontWeightBold   -> "bold"
+    b = case slant of
+          FontSlantNormal  -> ""
+          FontSlantItalic  -> "italic"
+          FontSlantOblique -> "oblique"
+    c = T.concat [T.pack $ show size, "pt"]
+    d = T.pack fnt

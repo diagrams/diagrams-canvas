@@ -24,6 +24,7 @@ import           Control.Monad.State          (when, State, evalState)
 
 import qualified Data.Foldable as F
 import           Data.Maybe                   (catMaybes, isJust, fromJust, fromMaybe)
+import qualified Data.Text                    as T
 import           Data.Tree                    (Tree(Node))
 import           Data.Typeable                (Typeable)
 
@@ -31,13 +32,14 @@ import           Diagrams.Prelude
 import           Diagrams.TwoD.Adjust         (adjustDia2D)
 import           Diagrams.TwoD.Attributes     (splitTextureFills)
 import           Diagrams.TwoD.Path           (Clip (Clip))
+import           Diagrams.TwoD.Text
 import           Diagrams.TwoD.Types          (R2(..))
 
 import           Diagrams.Core.Compile
 import           Diagrams.Core.Types          (Annotation (..))
 
-import qualified Graphics.Blank as BC
-import qualified Graphics.Rendering.Canvas as C
+import qualified Graphics.Blank               as BC
+import qualified Graphics.Rendering.Canvas    as C
 import           Graphics.Rendering.Canvas    (liftC, getStyleAttrib, accumStyle)
 
 -- | This data declaration is simply used as a token to distinguish 
@@ -156,3 +158,19 @@ canvasPath (Path trs) = do
     renderTrail (viewLoc -> (unp2 -> p, tr)) = do
       uncurry C.moveTo p
       renderC tr
+
+instance Renderable Text Canvas where
+  render _ (Text tt tn al str) = C $ do
+    isLocal <- fromMaybe True <$> getStyleAttrib getFontSizeIsLocal
+    tf      <- fromMaybe "Calibri" <$> getStyleAttrib getFont
+    fs      <- fromMaybe 12 <$> getStyleAttrib (fromOutput . getFontSize)
+    slant   <- fromMaybe FontSlantNormal <$> getStyleAttrib getFontSlant
+    fw      <- fromMaybe FontWeightNormal <$> getStyleAttrib getFontWeight
+    f       <- fromMaybe (SC (SomeColor (black :: Colour Double)))
+               <$> getStyleAttrib getFillTexture
+    let fnt = C.showFontJS fw slant fs tf
+        tr  = if isLocal then tt else tn
+    C.liftC $ BC.textAlign (T.pack "center")
+    C.liftC $ BC.font fnt
+    C.canvasTransform (tr <> reflectionY)
+    C.liftC $ BC.fillText (T.pack str, 0, 0)
