@@ -28,7 +28,7 @@ module Graphics.Rendering.Canvas
 
 import           Control.Applicative      ((<$>))
 import           Control.Arrow            ((***))
-import           Control.Lens             (makeLenses, (.=), use)
+import           Control.Lens             (makeLenses, (.=), use, (^.))
 import           Control.Monad.State
 import qualified Control.Monad.StateStack as SS
 
@@ -43,10 +43,10 @@ import           Diagrams.Prelude         (Monoid(mempty))
 import           Diagrams.Attributes      (Color(..),LineCap(..),LineJoin(..), 
                                           SomeColor(..), colorToSRGBA)
 import           Diagrams.Core.Style      (Style, AttributeClass, getAttr)
+import           Diagrams.Core.Transform
 import           Diagrams.Core.Types      (fromOutput)
-import           Diagrams.TwoD.Attributes (Texture(..), getLineWidth, 
-                                           LGradient, RGradient)
-import           Diagrams.TwoD.Types      (R2(..))
+import           Diagrams.TwoD.Attributes hiding (fillTexture)
+import           Diagrams.TwoD.Types      (R2(..), unp2)
 import qualified Graphics.Blank           as BC
 import qualified Graphics.Blank.Style     as S
 
@@ -133,6 +133,43 @@ clip = liftC $ BC.clip ()
 byteRange :: Double -> Word8
 byteRange d = floor (d * 255)
 
+data TextureUse = Fill | Line
+
+texture :: TextureUse -> Texture -> RenderM()
+texture u (SC (SomeColor c)) = case u of
+  Fill -> liftC . S.fillStyle   $ s
+  Line -> liftC . S.strokeStyle $ s
+  where s = showColorJS c
+
+texture u (LG g) = liftC $ do
+  grd <- BC.createLinearGradient (x0, y0, x1, y1)
+  mapM_ (flip BC.addColorStop $ grd) stops
+  case u of
+    Fill -> S.fillStyle grd
+    Line -> S.strokeStyle grd
+  where
+    (x0', y0') = unp2 $ transform (g^.lGradTrans) (g^.lGradStart)
+    (x1', y1') = unp2 $ transform (g^.lGradTrans) (g^.lGradEnd)
+    (x0, y0, x1, y1) = ( realToFrac x0', realToFrac y0'
+                       , realToFrac x1', realToFrac y1')
+    stops = map (\s -> ( realToFrac (s^.stopFraction)
+                       , showColorJS (s^.stopColor))) (g^.lGradStops)
+
+texture u (RG g) = liftC $ do
+  grd <- BC.createRadialGradient (x0, y0, r0, x1, y1, r1)
+  mapM_ (flip BC.addColorStop $ grd) stops
+  case u of
+    Fill -> S.fillStyle grd
+    Line -> S.strokeStyle grd
+  where
+    (r0, r1) = (realToFrac (g^.rGradRadius0), realToFrac (g^.rGradRadius1))
+    (x0', y0') = unp2 $ transform (g^.rGradTrans) (g^.rGradCenter0)
+    (x1', y1') = unp2 $ transform (g^.rGradTrans) (g^.rGradCenter1)
+    (x0, y0, x1, y1) = ( realToFrac x0', realToFrac y0'
+                       , realToFrac x1', realToFrac y1')
+    stops = map (\s -> ( realToFrac (s^.stopFraction)
+                       , showColorJS (s^.stopColor))) (g^.rGradStops)
+
 showColorJS :: (Color c) => c -> Text
 showColorJS c = T.concat
     [ "rgba("
@@ -146,35 +183,18 @@ showColorJS c = T.concat
         s = T.pack . show . byteRange
         (r,g,b,a) = colorToSRGBA c
 
-transform :: Double -> Double -> Double -> Double -> Double -> Double -> RenderM ()
-transform ax ay bx by tx ty = liftC $ BC.transform vs
-    where 
-      vs = (realToFrac ax,realToFrac ay
-           ,realToFrac bx,realToFrac by
-           ,realToFrac tx,realToFrac ty)
-
-withTexture :: Texture -> (Text -> BC.Canvas ()) 
-                       -> (BC.CanvasGradient -> BC.Canvas ()) 
-                       -> RenderM ()
-withTexture (SC (SomeColor c)) f _ = liftC . f . showColorJS $ c
-withTexture (LG grd) _ g           = liftC . g . lGradient $ grd
-withTexture (RG grd) _ g           = liftC . g . rGradient $ grd
-
-lGradient :: LGradient -> BC.CanvasGradient
-lGradient = undefined
-
-rGradient :: RGradient -> BC.CanvasGradient
-rGradient = undefined
+-- transform :: Double -> Double -> Double -> Double -> Double -> Double -> RenderM ()
+-- transform ax ay bx by tx ty = liftC $ BC.transform vs
+    -- where 
+      -- vs = (realToFrac ax,realToFrac ay
+           -- ,realToFrac bx,realToFrac by
+           -- ,realToFrac tx,realToFrac ty)
 
 strokeTexture :: Texture -> RenderM ()
-strokeTexture t@(SC _) = withTexture t S.strokeStyle mempty
-strokeTexture t@(LG _) = withTexture t mempty S.strokeStyle
-strokeTexture t@(RG _) = withTexture t mempty S.strokeStyle
+strokeTexture = texture Line
 
 fillTexture :: Texture  -> RenderM ()
-fillTexture t@(SC _) = withTexture t S.fillStyle mempty
-fillTexture t@(LG _) = withTexture t mempty S.fillStyle
-fillTexture t@(RG _) = withTexture t mempty S.fillStyle
+fillTexture = texture Fill
 
 fromLineCap :: LineCap -> Text
 fromLineCap LineCapRound  = "round"

@@ -120,12 +120,6 @@ canvasStyle s = sequence_
         lJoin = liftC .  BC.lineJoin . C.fromLineJoin . getLineJoin
         opacity_ = liftC . BC.globalAlpha . realToFrac . getOpacity
 
--- canvasTransf :: Transformation R2 -> C.RenderM ()
--- canvasTransf t = C.transform a1 a2 b1 b2 c1 c2
-  -- where (unr2 -> (a1,a2)) = apply t unitX
-        -- (unr2 -> (b1,b2)) = apply t unitY
-        -- (unr2 -> (c1,c2)) = transl t
-
 instance Renderable (Segment Closed R2) Canvas where
   render _ (Linear (OffsetClosed (R2 x y))) = C $ C.relLineTo x y
   render _ (Cubic (R2 x1 y1)
