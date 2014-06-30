@@ -16,6 +16,7 @@ module Diagrams.Backend.Canvas.CmdLine
        , multiMain
        , mainWith
        , Canvas
+       , B
        ) where
 
 import System.Console.CmdArgs.Implicit hiding (args)

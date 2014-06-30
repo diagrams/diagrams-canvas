@@ -15,6 +15,7 @@
 module Diagrams.Backend.Canvas
 
   ( Canvas(..) -- rendering token
+  , B
   , Options(..) -- for rendering options specific to Canvas
   ) where
 
@@ -43,6 +44,8 @@ import           Graphics.Rendering.Canvas    (liftC, getStyleAttrib, accumStyle
 --   this rendering engine.
 data Canvas = Canvas
     deriving Typeable
+
+type B = Canvas
 
 instance Monoid (Render Canvas R2) where
   mempty  = C $ return ()
@@ -81,7 +84,6 @@ toRender = fromRTree
         canvasStyle sty
         accumStyle %= (<> sty)
         runC $ F.foldMap fromRTree rs
-        C.stroke
         C.restore
       fromRTree (Node _ rs) = F.foldMap fromRTree rs
 
@@ -104,11 +106,11 @@ renderC a = case (render Canvas a) of C r -> r
 
 canvasStyle :: Style v -> C.RenderM ()
 canvasStyle s = sequence_
-              . catMaybes $ [ handle lWidth
-                            , handle lJoin
+              . catMaybes $ [ handle clip 
+                            , handle lWidth
                             , handle lCap
+                            , handle lJoin
                             , handle opacity_
-                            , handle clip
                             ]
   where handle :: (AttributeClass a) => (a -> C.RenderM ()) -> Maybe (C.RenderM ())
         handle f = f `fmap` getAttr s
@@ -147,8 +149,8 @@ instance Renderable (Path R2) Canvas where
     canvasPath p
     f <- getStyleAttrib getFillTexture
     s <- getStyleAttrib getLineTexture
-    when (isJust f) (C.fillColor (fromJust f) >> C.fill)
-    C.strokeColor (fromMaybe (SC (SomeColor (black :: Colour Double))) s)
+    when (isJust f) (C.fillTexture (fromJust f) >> C.fill)
+    C.strokeTexture (fromMaybe (SC (SomeColor (black :: Colour Double))) s)
     C.stroke
 
 -- Add a path to the Canvas context, without stroking or filling it.
