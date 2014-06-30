@@ -149,8 +149,8 @@ instance Renderable (Path R2) Canvas where
     canvasPath p
     f <- getStyleAttrib getFillTexture
     s <- getStyleAttrib getLineTexture
-    when (isJust f) (C.fillColor (fromJust f) >> C.fill)
-    C.strokeColor (fromMaybe (SC (SomeColor (black :: Colour Double))) s)
+    when (isJust f) (C.fillTexture (fromJust f) >> C.fill)
+    C.strokeTexture (fromMaybe (SC (SomeColor (black :: Colour Double))) s)
     C.stroke
 
 -- Add a path to the Canvas context, without stroking or filling it.
