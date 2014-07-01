@@ -182,9 +182,20 @@ instance Renderable Text Canvas where
                      w' | w' <= 0.25 -> T.pack "start"
                      w' | w' >= 0.75 -> T.pack "end"
                      _ -> T.pack "center"
+    C.save
     C.liftC $ BC.textBaseline vAlign
     C.liftC $ BC.textAlign hAlign
     C.liftC $ BC.font fnt
     C.strokeTexture tx
     C.canvasTransform (tr <> reflectionY)
     C.liftC $ BC.fillText (T.pack str, 0, 0)
+    C.restore
+
+-- instance Renderable (DImage External) Canvas where
+  -- render _ (DImage path w h tr) = C $ do
+    -- let ImageRef file = path
+    -- C.save
+    -- C.canvasTransform (tr <> reflectionY)
+    -- img <- C.liftC $ BC.newImage (T.pack file)
+    -- C.liftC $ BC.drawImage (img, [0, 0, fromIntegral w, fromIntegral h])
+    -- C.restore

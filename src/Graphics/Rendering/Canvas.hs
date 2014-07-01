@@ -187,7 +187,7 @@ showColorJS c = T.concat
         (r,g,b,a) = colorToSRGBA c
 
 canvasTransform :: T2 -> RenderM ()
-canvasTransform tr = liftC $ BC.setTransform vs
+canvasTransform tr = liftC $ BC.transform vs
     where 
       [[ax, ay], [bx, by], [tx, ty]] = matrixHomRep tr
       vs = (realToFrac ax,realToFrac ay
