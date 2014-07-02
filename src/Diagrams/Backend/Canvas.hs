@@ -1,14 +1,13 @@
-{-# LANGUAGE TypeFamilies
-           , MultiParamTypeClasses
-           , FlexibleInstances
-           , FlexibleContexts
-           , GADTs
-           , TypeSynonymInstances
-           , DeriveDataTypeable
-           , ViewPatterns
-           , InstanceSigs
-           , ScopedTypeVariables
-  #-}
+{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE GADTs                 #-}
+{-# LANGUAGE TypeSynonymInstances  #-}
+{-# LANGUAGE DeriveDataTypeable    #-}
+{-# LANGUAGE ViewPatterns          #-}
+{-# LANGUAGE InstanceSigs          #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
 
 -- The Canvas backend.
 

@@ -1,7 +1,7 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving
-           , RecordWildCards
-           , OverloadedStrings 
-           , TemplateHaskell #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE RecordWildCards            #-}
+{-# LANGUAGE OverloadedStrings          #-} 
+{-# LANGUAGE TemplateHaskell            #-}
 
 module Graphics.Rendering.Canvas
   ( RenderM()
