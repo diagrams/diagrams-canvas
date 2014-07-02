@@ -111,7 +111,6 @@ canvasStyle s = sequence_
                             , handle lWidth
                             , handle lCap
                             , handle lJoin
-                            , handle opacity_
                             ]
   where handle :: (AttributeClass a) => (a -> C.RenderM ()) -> Maybe (C.RenderM ())
         handle f = f `fmap` getAttr s
@@ -119,7 +118,6 @@ canvasStyle s = sequence_
         lWidth = liftC . BC.lineWidth . realToFrac . fromOutput . getLineWidth
         lCap = liftC . BC.lineCap . C.fromLineCap . getLineCap
         lJoin = liftC .  BC.lineJoin . C.fromLineJoin . getLineJoin
-        opacity_ = liftC . BC.globalAlpha . realToFrac . getOpacity
 
 instance Renderable (Segment Closed R2) Canvas where
   render _ (Linear (OffsetClosed (R2 x y))) = C $ C.relLineTo x y
@@ -144,9 +142,12 @@ instance Renderable (Path R2) Canvas where
     canvasPath p
     f <- getStyleAttrib getFillTexture
     s <- getStyleAttrib getLineTexture
-    when (isJust f) (C.fillTexture (fromJust f) >> C.fill)
-    C.strokeTexture (fromMaybe (SC (SomeColor (black :: Colour Double))) s)
+    o <- fromMaybe 1 <$> getStyleAttrib getOpacity
+    C.save
+    when (isJust f) (C.fillTexture (fromJust f) o >> C.fill)
+    C.strokeTexture (fromMaybe (SC (SomeColor (black :: Colour Double))) s) o
     C.stroke
+    C.restore
 
 -- Add a path to the Canvas context, without stroking or filling it.
 canvasPath :: Path R2 -> C.RenderM ()
@@ -167,6 +168,7 @@ instance Renderable Text Canvas where
     fw      <- fromMaybe FontWeightNormal <$> getStyleAttrib getFontWeight
     tx      <- fromMaybe (SC (SomeColor (black :: Colour Double)))
                <$> getStyleAttrib getFillTexture
+    o       <- fromMaybe 1 <$> getStyleAttrib getOpacity
     let fnt = C.showFontJS fw slant fs tf
         tr  = if isLocal then tt else tn
         vAlign = case al of
@@ -185,7 +187,7 @@ instance Renderable Text Canvas where
     C.liftC $ BC.textBaseline vAlign
     C.liftC $ BC.textAlign hAlign
     C.liftC $ BC.font fnt
-    C.strokeTexture tx
+    C.strokeTexture tx o
     C.canvasTransform (tr <> reflectionY)
     C.liftC $ BC.fillText (T.pack str, 0, 0)
     C.restore

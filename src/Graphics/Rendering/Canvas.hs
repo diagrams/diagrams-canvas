@@ -138,13 +138,13 @@ byteRange d = floor (d * 255)
 
 data TextureUse = Fill | Line
 
-texture :: TextureUse -> Texture -> RenderM()
-texture u (SC (SomeColor c)) = case u of
-  Fill -> liftC . S.fillStyle   $ s
-  Line -> liftC . S.strokeStyle $ s
-  where s = showColorJS c
+texture :: TextureUse -> Texture -> Double -> RenderM()
+texture u (SC (SomeColor c))  o = case u of
+    Fill -> liftC . S.fillStyle   $ s
+    Line -> liftC . S.strokeStyle $ s
+  where s = showColorJS c o
 
-texture u (LG g) = liftC $ do
+texture u (LG g) _ = liftC $ do
   grd <- BC.createLinearGradient (x0, y0, x1, y1)
   mapM_ (flip BC.addColorStop $ grd) stops
   case u of
@@ -156,9 +156,9 @@ texture u (LG g) = liftC $ do
     (x0, y0, x1, y1) = ( realToFrac x0', realToFrac y0'
                        , realToFrac x1', realToFrac y1')
     stops = map (\s -> ( realToFrac (s^.stopFraction)
-                       , showColorJS (s^.stopColor))) (g^.lGradStops)
+                       , showColorJS (s^.stopColor) 1)) (g^.lGradStops)
 
-texture u (RG g) = liftC $ do
+texture u (RG g) _ = liftC $ do
   grd <- BC.createRadialGradient (x0, y0, r0, x1, y1, r1)
   mapM_ (flip BC.addColorStop $ grd) stops
   case u of
@@ -171,20 +171,20 @@ texture u (RG g) = liftC $ do
     (x0, y0, x1, y1) = ( realToFrac x0', realToFrac y0'
                        , realToFrac x1', realToFrac y1')
     stops = map (\s -> ( realToFrac (s^.stopFraction)
-                       , showColorJS (s^.stopColor))) (g^.rGradStops)
+                       , showColorJS (s^.stopColor) 1)) (g^.rGradStops)
 
-showColorJS :: (Color c) => c -> Text
-showColorJS c = T.concat
+showColorJS :: (Color c) => c -> Double  -> Text
+showColorJS c o = T.concat
     [ "rgba("
         , s r, ","
     , s g, ","
     , s b, ","
-    , T.pack (show a)
+    , T.pack (show $ a * o)
     , ")"
     ]
   where s :: Double -> Text
         s = T.pack . show . byteRange
-        (r,g,b,a) = colorToSRGBA c
+        (r,g,b,a) = colorToSRGBA . toAlphaColour $  c
 
 canvasTransform :: T2 -> RenderM ()
 canvasTransform tr = liftC $ BC.transform vs
@@ -194,10 +194,10 @@ canvasTransform tr = liftC $ BC.transform vs
            ,realToFrac bx,realToFrac by
            ,realToFrac tx,realToFrac ty)
 
-strokeTexture :: Texture -> RenderM ()
+strokeTexture :: Texture -> Double  -> RenderM ()
 strokeTexture = texture Line
 
-fillTexture :: Texture  -> RenderM ()
+fillTexture :: Texture -> Double  -> RenderM ()
 fillTexture = texture Fill
 
 fromLineCap :: LineCap -> Text
