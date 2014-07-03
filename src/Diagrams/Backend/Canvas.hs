@@ -187,7 +187,7 @@ instance Renderable Text Canvas where
     C.liftC $ BC.textBaseline vAlign
     C.liftC $ BC.textAlign hAlign
     C.liftC $ BC.font fnt
-    C.strokeTexture tx o
+    C.fillTexture tx o
     C.canvasTransform (tr <> reflectionY)
     C.liftC $ BC.fillText (T.pack str, 0, 0)
     C.restore
