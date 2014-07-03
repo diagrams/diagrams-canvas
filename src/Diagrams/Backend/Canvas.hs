@@ -1,14 +1,13 @@
-{-# LANGUAGE TypeFamilies
-           , MultiParamTypeClasses
-           , FlexibleInstances
-           , FlexibleContexts
-           , GADTs
-           , TypeSynonymInstances
-           , DeriveDataTypeable
-           , ViewPatterns
-           , InstanceSigs
-           , ScopedTypeVariables
-  #-}
+{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE GADTs                 #-}
+{-# LANGUAGE TypeSynonymInstances  #-}
+{-# LANGUAGE DeriveDataTypeable    #-}
+{-# LANGUAGE ViewPatterns          #-}
+{-# LANGUAGE InstanceSigs          #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
 
 -- The Canvas backend.
 
@@ -24,6 +23,7 @@ import           Control.Monad.State          (when, State, evalState)
 
 import qualified Data.Foldable as F
 import           Data.Maybe                   (catMaybes, isJust, fromJust, fromMaybe)
+import qualified Data.Text                    as T
 import           Data.Tree                    (Tree(Node))
 import           Data.Typeable                (Typeable)
 
@@ -31,13 +31,14 @@ import           Diagrams.Prelude
 import           Diagrams.TwoD.Adjust         (adjustDia2D)
 import           Diagrams.TwoD.Attributes     (splitTextureFills)
 import           Diagrams.TwoD.Path           (Clip (Clip))
+import           Diagrams.TwoD.Text
 import           Diagrams.TwoD.Types          (R2(..))
 
 import           Diagrams.Core.Compile
 import           Diagrams.Core.Types          (Annotation (..))
 
-import qualified Graphics.Blank as BC
-import qualified Graphics.Rendering.Canvas as C
+import qualified Graphics.Blank               as BC
+import qualified Graphics.Rendering.Canvas    as C
 import           Graphics.Rendering.Canvas    (liftC, getStyleAttrib, accumStyle)
 
 -- | This data declaration is simply used as a token to distinguish 
@@ -110,7 +111,6 @@ canvasStyle s = sequence_
                             , handle lWidth
                             , handle lCap
                             , handle lJoin
-                            , handle opacity_
                             ]
   where handle :: (AttributeClass a) => (a -> C.RenderM ()) -> Maybe (C.RenderM ())
         handle f = f `fmap` getAttr s
@@ -118,13 +118,6 @@ canvasStyle s = sequence_
         lWidth = liftC . BC.lineWidth . realToFrac . fromOutput . getLineWidth
         lCap = liftC . BC.lineCap . C.fromLineCap . getLineCap
         lJoin = liftC .  BC.lineJoin . C.fromLineJoin . getLineJoin
-        opacity_ = liftC . BC.globalAlpha . realToFrac . getOpacity
-
--- canvasTransf :: Transformation R2 -> C.RenderM ()
--- canvasTransf t = C.transform a1 a2 b1 b2 c1 c2
-  -- where (unr2 -> (a1,a2)) = apply t unitX
-        -- (unr2 -> (b1,b2)) = apply t unitY
-        -- (unr2 -> (c1,c2)) = transl t
 
 instance Renderable (Segment Closed R2) Canvas where
   render _ (Linear (OffsetClosed (R2 x y))) = C $ C.relLineTo x y
@@ -149,9 +142,12 @@ instance Renderable (Path R2) Canvas where
     canvasPath p
     f <- getStyleAttrib getFillTexture
     s <- getStyleAttrib getLineTexture
-    when (isJust f) (C.fillTexture (fromJust f) >> C.fill)
-    C.strokeTexture (fromMaybe (SC (SomeColor (black :: Colour Double))) s)
+    o <- fromMaybe 1 <$> getStyleAttrib getOpacity
+    C.save
+    when (isJust f) (C.fillTexture (fromJust f) o >> C.fill)
+    C.strokeTexture (fromMaybe (SC (SomeColor (black :: Colour Double))) s) o
     C.stroke
+    C.restore
 
 -- Add a path to the Canvas context, without stroking or filling it.
 canvasPath :: Path R2 -> C.RenderM ()
@@ -162,3 +158,45 @@ canvasPath (Path trs) = do
     renderTrail (viewLoc -> (unp2 -> p, tr)) = do
       uncurry C.moveTo p
       renderC tr
+
+instance Renderable Text Canvas where
+  render _ (Text tt tn al str) = C $ do
+    isLocal <- fromMaybe True <$> getStyleAttrib getFontSizeIsLocal
+    tf      <- fromMaybe "Calibri" <$> getStyleAttrib getFont
+    fs      <- fromMaybe 12 <$> getStyleAttrib (fromOutput . getFontSize)
+    slant   <- fromMaybe FontSlantNormal <$> getStyleAttrib getFontSlant
+    fw      <- fromMaybe FontWeightNormal <$> getStyleAttrib getFontWeight
+    tx      <- fromMaybe (SC (SomeColor (black :: Colour Double)))
+               <$> getStyleAttrib getFillTexture
+    o       <- fromMaybe 1 <$> getStyleAttrib getOpacity
+    let fnt = C.showFontJS fw slant fs tf
+        tr  = if isLocal then tt else tn
+        vAlign = case al of
+                   BaselineText -> T.pack "alphabetic"
+                   BoxAlignedText _ h -> case h of
+                     h' | h' <= 0.25 -> T.pack "bottom"
+                     h' | h' >= 0.75 -> T.pack "top"
+                     _ -> T.pack "middle"
+        hAlign = case al of
+                   BaselineText -> T.pack "start"
+                   BoxAlignedText w _ -> case w of
+                     w' | w' <= 0.25 -> T.pack "start"
+                     w' | w' >= 0.75 -> T.pack "end"
+                     _ -> T.pack "center"
+    C.save
+    C.liftC $ BC.textBaseline vAlign
+    C.liftC $ BC.textAlign hAlign
+    C.liftC $ BC.font fnt
+    C.fillTexture tx o
+    C.canvasTransform (tr <> reflectionY)
+    C.liftC $ BC.fillText (T.pack str, 0, 0)
+    C.restore
+
+-- instance Renderable (DImage External) Canvas where
+  -- render _ (DImage path w h tr) = C $ do
+    -- let ImageRef file = path
+    -- C.save
+    -- C.canvasTransform (tr <> reflectionY)
+    -- img <- C.liftC $ BC.newImage (T.pack file)
+    -- C.liftC $ BC.drawImage (img, [0, 0, fromIntegral w, fromIntegral h])
+    -- C.restore
