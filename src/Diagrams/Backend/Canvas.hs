@@ -11,7 +11,20 @@
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TemplateHaskell       #-}
 
--- The Canvas backend.
+-------------------------------------------------------------------------------
+-- |
+-- Module      :  Diagrams.Backend.Canvas
+-- Copyright   :  (c) 2010 - 2014 diagrams-canvas team (see LICENSE)
+-- License     :  BSD-style (see LICENSE)
+-- Maintainer  :  diagrams-discuss@googlegroups.com
+--
+-- A full-featured rendering backend for diagrams using Canvas.
+-- implemented using the blank-canvas platform.
+--
+-- To invoke the Canvas backend, you can use the 
+-- "Diagrams.Backend.Canvas.CmdLine" module.
+--
+------------------------------------------------------------------------------
 
 module Diagrams.Backend.Canvas
 
@@ -74,6 +87,7 @@ liftC = lift
 
 runRenderM :: RenderM a -> BC.Canvas a
 runRenderM = flip SS.evalStateStackT def
+
 instance Monoid (Render Canvas R2) where
   mempty  = C $ return ()
   (C c1) `mappend` (C c2) = C (c1 >> c2)
@@ -128,23 +142,6 @@ setSize o s = o {_canvasSize = s}
 size :: Lens' (Options Canvas R2) SizeSpec2D
 size = lens getSize setSize
 
-renderC :: (Renderable a Canvas, V a ~ R2) => a -> RenderM ()
-renderC a = case (render Canvas a) of C r -> r
-
-canvasStyle :: Style v -> RenderM ()
-canvasStyle s = sequence_
-              . catMaybes $ [ handle clip' 
-                            , handle lWidth
-                            , handle lCap
-                            , handle lJoin
-                            ]
-  where handle :: (AttributeClass a) => (a -> RenderM ()) -> Maybe (RenderM ())
-        handle f = f `fmap` getAttr s
-        clip'    = mapM_ (\p -> canvasPath p >> clip) . op Clip
-        lWidth   = liftC . BC.lineWidth . realToFrac . fromOutput . getLineWidth
-        lCap     = liftC . BC.lineCap . fromLineCap . getLineCap
-        lJoin    = liftC .  BC.lineJoin . fromLineJoin . getLineJoin
-
 move :: (Float, Float) -> RenderM ()
 move p = do csPos .= p
 
@@ -186,18 +183,16 @@ relCurveTo ax ay bx by cx cy = do
 getStyleAttrib :: AttributeClass a => (a -> b) -> RenderM (Maybe b)
 getStyleAttrib f = (fmap f . getAttr) <$> use accumStyle
 
+-- | From the HTML5 canvas specification regarding line width:
+--
+--     "On setting, zero, negative, infinite, and NaN values must be
+--     ignored, leaving the value unchanged; other values must change
+--     the current value to the new value.
+--
+--   Hence we must implement a line width of zero by simply not
+--   sending a stroke command.
 stroke :: RenderM ()
 stroke = do
-
-  -- From the HTML5 canvas specification regarding line width:
-  --
-  --   "On setting, zero, negative, infinite, and NaN values must be
-  --   ignored, leaving the value unchanged; other values must change
-  --   the current value to the new value.
-  --
-  -- Hence we must implement a line width of zero by simply not
-  -- sending a stroke command.
-
   -- default value of 1 is arbitary, anything > 0 will do.
   w <- fromMaybe 1 <$> getStyleAttrib (fromOutput . getLineWidth)
   when (w > 0) (liftC $ BC.stroke ())
@@ -297,6 +292,24 @@ showFontJS wgt slant size fnt = T.concat [a, " ", b, " ", c, " ", d]
           FontSlantOblique -> "oblique"
     c = T.concat [T.pack $ show size, "pt"]
     d = T.pack fnt
+
+renderC :: (Renderable a Canvas, V a ~ R2) => a -> RenderM ()
+renderC a = case (render Canvas a) of C r -> r
+
+canvasStyle :: Style v -> RenderM ()
+canvasStyle s = sequence_
+              . catMaybes $ [ handle clip' 
+                            , handle lWidth
+                            , handle lCap
+                            , handle lJoin
+                            ]
+  where handle :: (AttributeClass a) => (a -> RenderM ()) -> Maybe (RenderM ())
+        handle f = f `fmap` getAttr s
+        clip'    = mapM_ (\p -> canvasPath p >> clip) . op Clip
+        lWidth   = liftC . BC.lineWidth . realToFrac . fromOutput . getLineWidth
+        lCap     = liftC . BC.lineCap . fromLineCap . getLineCap
+        lJoin    = liftC .  BC.lineJoin . fromLineJoin . getLineJoin
+
 instance Renderable (Segment Closed R2) Canvas where
   render _ (Linear (OffsetClosed (R2 x y))) = C $ relLineTo x y
   render _ (Cubic (R2 x1 y1)
