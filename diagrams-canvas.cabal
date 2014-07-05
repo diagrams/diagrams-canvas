@@ -7,7 +7,7 @@ Description:         This package provides a modular backend for rendering
 Homepage:            http://projects.haskell.org/diagrams/
 License:             BSD3
 License-file:        LICENSE
-Author:              Jeffrey Rosenbluth, Andy Gill, Ryan Yates
+Author:              Jeffrey Rosenbluth, Ryan Yates, Andy Gill
 Maintainer:          byorgey@cis.upenn.edu
 Stability:           Experimental
 Category:            Graphics
