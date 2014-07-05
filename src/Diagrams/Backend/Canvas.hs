@@ -19,7 +19,7 @@
 -- Maintainer  :  diagrams-discuss@googlegroups.com
 --
 -- A full-featured rendering backend for diagrams using Canvas.
--- implemented using the blank-canvas platform.
+-- Implemented using the blank-canvas platform.
 --
 -- To invoke the Canvas backend, you can use the 
 -- "Diagrams.Backend.Canvas.CmdLine" module.
@@ -235,18 +235,19 @@ texture u (RG g) _ = liftC $ do
     Fill -> S.fillStyle grd
     Strk -> S.strokeStyle grd
   where
-    (r0, r1) = (realToFrac (g^.rGradRadius0), realToFrac (g^.rGradRadius1))
+    (r0, r1) = (s * realToFrac (g^.rGradRadius0), s * realToFrac  (g^.rGradRadius1))
     (x0', y0') = unp2 $ transform (g^.rGradTrans) (g^.rGradCenter0)
     (x1', y1') = unp2 $ transform (g^.rGradTrans) (g^.rGradCenter1)
     (x0, y0, x1, y1) = ( realToFrac x0', realToFrac y0'
                        , realToFrac x1', realToFrac y1')
     stops = map (\s -> ( realToFrac (s^.stopFraction)
                        , showColorJS (s^.stopColor) 1)) (g^.rGradStops)
+    s = realToFrac . avgScale $ (g^.rGradTrans)
 
 showColorJS :: (Color c) => c -> Double  -> T.Text
 showColorJS c o = T.concat
     [ "rgba("
-        , s r, ","
+    , s r, ","
     , s g, ","
     , s b, ","
     , T.pack (show $ a * o)
