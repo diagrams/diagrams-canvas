@@ -20,7 +20,6 @@ Source-repository head
 Library
   Exposed-modules:     Diagrams.Backend.Canvas
                        Diagrams.Backend.Canvas.CmdLine
-                       Graphics.Rendering.Canvas
   Hs-source-dirs:      src
   Build-depends:       base >= 4.6 && < 4.8,
                        mtl >= 2.0 && < 3.0,
