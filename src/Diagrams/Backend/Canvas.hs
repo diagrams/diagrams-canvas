@@ -362,8 +362,10 @@ instance Renderable Text Canvas where
     tx      <- fromMaybe (SC (SomeColor (black :: Colour Double)))
                <$> getStyleAttrib getFillTexture
     o       <- fromMaybe 1 <$> getStyleAttrib getOpacity
-    let fnt = showFontJS fw slant sz tf
-        tr  = if isLocal then tt else tn
+    let fSize = if isLocal
+                        then avgScale tt * size
+                        else size
+        fnt = showFontJS fw slant fSize tf
         vAlign = case al of
                    BaselineText -> T.pack "alphabetic"
                    BoxAlignedText _ h -> case h of
@@ -381,7 +383,7 @@ instance Renderable Text Canvas where
     liftC $ BC.textAlign hAlign
     liftC $ BC.font fnt
     fillTexture tx o
-    canvasTransform (tr <> reflectionY)
+    canvasTransform (tn <> reflectionY)
     liftC $ BC.fillText (T.pack str, 0, 0)
     restore
 
