@@ -24,7 +24,7 @@ module Diagrams.Backend.Canvas.CmdLine
 
         -- * Supported froms of @main@
        , defaultMain
-       -- , multiMain
+       , multiMain
        , Canvas
        , B
        ) where
@@ -87,11 +87,11 @@ canvasDia opts d context = do
           (fromIntegral <$> opts^.height))) 
     d
 
--- multiMain :: [(String, Diagram Canvas R2)] -> IO ()
--- multiMain = mainWith
+multiMain :: [(String, Diagram Canvas R2)] -> IO ()
+multiMain = mainWith
 
--- instance Mainable [(String, Diagram Canvas R2)] -> IO () where
-  -- type MainOpts [(String, Diagram Canvas R2)] = 
-    -- (MainOpts (Diagram Canvas R2), DiagramMultiOpts)
+instance Mainable [(String, Diagram Canvas R2)] where
+  type MainOpts [(String, Diagram Canvas R2)] = 
+    (MainOpts (Diagram Canvas R2), DiagramMultiOpts)
 
-  -- mainRender = defaultMultiMainRender
+  mainRender = defaultMultiMainRender
