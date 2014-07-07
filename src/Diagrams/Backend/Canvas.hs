@@ -363,8 +363,8 @@ instance Renderable Text Canvas where
                <$> getStyleAttrib getFillTexture
     o       <- fromMaybe 1 <$> getStyleAttrib getOpacity
     let fSize = if isLocal
-                        then avgScale tt * size
-                        else size
+                        then avgScale tt * sz
+                        else sz
         fnt = showFontJS fw slant fSize tf
         vAlign = case al of
                    BaselineText -> T.pack "alphabetic"
