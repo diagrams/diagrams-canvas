@@ -91,7 +91,7 @@ multiMain :: [(String, Diagram Canvas R2)] -> IO ()
 multiMain = mainWith
 
 instance Mainable [(String, Diagram Canvas R2)] -> IO () where
-    type MainOpts [(String, Diagram Canvas R2)]
-      = (MainOpts (Diagram Canvas R2), DiagramMultiOpts)
+  type MainOpts [(String, Diagram Canvas R2)] = 
+    (MainOpts (Diagram Canvas R2), DiagramMultiOpts)
 
-    mainRender = defaultMultiMainRender
+  mainRender = defaultMultiMainRender
