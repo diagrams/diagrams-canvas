@@ -1,8 +1,10 @@
-{-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE FlexibleInstances  #-}
-{-# LANGUAGE TypeFamilies       #-}
-{-# LANGUAGE TemplateHaskell    #-}
-{-# LANGUAGE CPP                #-}
+{-# LANGUAGE DeriveDataTypeable   #-}
+{-# LANGUAGE FlexibleInstances    #-}
+{-# LANGUAGE TypeFamilies         #-}
+{-# LANGUAGE TemplateHaskell      #-}
+{-# LANGUAGE CPP                  #-}
+
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -13,6 +15,36 @@
 --
 -- Convenient creation of command-line-driven executables for
 -- rendering diagrams using the Canvas backend.
+--
+--
+-- * 'defaultMain' creates an executable which can render a single
+--   diagram at various options.
+--
+-- * 'multiMain' is like 'defaultMain' but allows for a list of
+--   diagrams from which the user can choose one to render.
+--
+-- * 'mainWith' is a generic form that does all of the above but with
+--   a slightly scarier type.  See "Diagrams.Backend.CmdLine".  This
+--   form can also take a function type that has a suitable final result
+--   (any of arguments to the above types) and 'Parseable' arguments.
+--
+-- If you want to generate diagrams programmatically---/i.e./ if you
+-- want to do anything more complex than what the below functions
+-- provide---you have several options.
+--
+-- * Use a function with 'mainWith'.  This may require making
+--   'Parseable' instances for custom argument types.
+--
+-- * Make a new 'Mainable' instance.  This may require a newtype
+--   wrapper on your diagram type to avoid the existing instances.
+--   This gives you more control over argument parsing, intervening
+--   steps, and diagram creation.
+--
+-- * Build option records and pass them along with a diagram to 'mainRender'
+--   from "Diagrams.Backend.CmdLine".
+--
+-- For a tutorial on command-line diagram creation see
+-- <http://projects.haskell.org/diagrams/doc/cmdline.html>.
 --
 -----------------------------------------------------------------------------
 

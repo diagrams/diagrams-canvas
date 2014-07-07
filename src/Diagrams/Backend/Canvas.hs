@@ -33,7 +33,6 @@ module Diagrams.Backend.Canvas
   , Options(..) -- for rendering options specific to Canvas
   ) where
 
-import           Control.Applicative          ((<$>))
 import           Control.Arrow                ((***))
 import           Control.Lens                 hiding (transform, (#))
 import           Control.Monad.State          (when, State, evalState)
@@ -193,8 +192,10 @@ getStyleAttrib f = (fmap f . getAttr) <$> use accumStyle
 --   sending a stroke command.
 stroke :: RenderM ()
 stroke = do
-  -- default value of 1 is arbitary, anything > 0 will do.
-  w <- fromMaybe 1 <$> getStyleAttrib (fromOutput . getLineWidth)
+  -- The default value of 0.5 is somewhat arbitary since lineWidth should neve
+  -- be 'Nothing'. 0.5 is choose since it is the lower bound of the
+  -- default.
+  w <- fromMaybe 0.5 <$> getStyleAttrib (fromOutput . getLineWidth)
   when (w > 0) (liftC $ BC.stroke ())
 
 fill :: RenderM ()
@@ -240,8 +241,8 @@ texture u (RG g) _ = liftC $ do
     (x1', y1') = unp2 $ transform (g^.rGradTrans) (g^.rGradCenter1)
     (x0, y0, x1, y1) = ( realToFrac x0', realToFrac y0'
                        , realToFrac x1', realToFrac y1')
-    stops = map (\s -> ( realToFrac (s^.stopFraction)
-                       , showColorJS (s^.stopColor) 1)) (g^.rGradStops)
+    stops = map (\st -> ( realToFrac (st^.stopFraction)
+                        , showColorJS (st^.stopColor) 1)) (g^.rGradStops)
     s = realToFrac . avgScale $ (g^.rGradTrans)
 
 showColorJS :: (Color c) => c -> Double  -> T.Text
@@ -282,7 +283,7 @@ fromLineJoin LineJoinBevel = "bevel"
 fromLineJoin _             = "miter"
 
 showFontJS :: FontWeight -> FontSlant -> Double -> String -> T.Text
-showFontJS wgt slant size fnt = T.concat [a, " ", b, " ", c, " ", d]
+showFontJS wgt slant sz fnt = T.concat [a, " ", b, " ", c, " ", d]
   where
     a = case wgt of
           FontWeightNormal -> ""
@@ -291,7 +292,7 @@ showFontJS wgt slant size fnt = T.concat [a, " ", b, " ", c, " ", d]
           FontSlantNormal  -> ""
           FontSlantItalic  -> "italic"
           FontSlantOblique -> "oblique"
-    c = T.concat [T.pack $ show size, "pt"]
+    c = T.concat [T.pack $ show sz, "pt"]
     d = T.pack fnt
 
 renderC :: (Renderable a Canvas, V a ~ R2) => a -> RenderM ()
@@ -355,13 +356,13 @@ instance Renderable Text Canvas where
   render _ (Text tt tn al str) = C $ do
     isLocal <- fromMaybe True <$> getStyleAttrib getFontSizeIsLocal
     tf      <- fromMaybe "Calibri" <$> getStyleAttrib getFont
-    size    <- fromMaybe 12 <$> getStyleAttrib (fromOutput . getFontSize)
+    sz      <- fromMaybe 12 <$> getStyleAttrib (fromOutput . getFontSize)
     slant   <- fromMaybe FontSlantNormal <$> getStyleAttrib getFontSlant
     fw      <- fromMaybe FontWeightNormal <$> getStyleAttrib getFontWeight
     tx      <- fromMaybe (SC (SomeColor (black :: Colour Double)))
                <$> getStyleAttrib getFillTexture
     o       <- fromMaybe 1 <$> getStyleAttrib getOpacity
-    let fnt = showFontJS fw slant size tf
+    let fnt = showFontJS fw slant sz tf
         tr  = if isLocal then tt else tn
         vAlign = case al of
                    BaselineText -> T.pack "alphabetic"
