@@ -5,7 +5,7 @@ import Diagrams.Backend.Canvas.CmdLine
 import Data.List.Split (chunksOf)
 
 -- Create a 3 x 3 grid of circles named "1" to "9"
-c  ii = circle 1.5 # fc lightgray # lw none # showOrigin
+c     = circle 1.5 # fc lightgray # lw none # showOrigin
 cs    = [c # named (show x) | x <- [1..9]]
 cGrid = (vcat' $ with & sep .~ 4)
       . map (hcat' $ with & sep .~ 12)

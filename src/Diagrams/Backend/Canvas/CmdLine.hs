@@ -1,8 +1,13 @@
-{-# LANGUAGE DeriveDataTypeable, CPP #-}
+{-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE FlexibleInstances  #-}
+{-# LANGUAGE TypeFamilies       #-}
+{-# LANGUAGE TemplateHaskell    #-}
+{-# LANGUAGE CPP                #-}
+
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Diagrams.Backend.Canvas.CmdLine
--- Copyright   :  (c) 2011 Diagrams team (see LICENSE)
+-- Copyright   :  (c) 2011-2014 Diagrams team (see LICENSE)
 -- License     :  BSD-style (see LICENSE)
 -- Maintainer  :  diagrams-discuss@googlegroups.com
 --
@@ -12,84 +17,81 @@
 -----------------------------------------------------------------------------
 
 module Diagrams.Backend.Canvas.CmdLine
-       ( defaultMain
+       ( 
+        -- * General form of @main@
+        --  $mainWith
+        mainWith
+
+        -- * Supported froms of @main@
+       , defaultMain
        , multiMain
-       , mainWith
        , Canvas
        , B
        ) where
 
-import System.Console.CmdArgs.Implicit hiding (args)
-import System.Environment (getProgName)
-
-import Diagrams.Prelude hiding (width, height)
+import Diagrams.Prelude                hiding (width, height, option, (<>), value)
+import Diagrams.Backend.CmdLine        hiding (width, height)
 import Diagrams.Backend.Canvas
-import qualified Graphics.Blank as BC
+import qualified Graphics.Blank        as BC
 
+import Data.Data
+import Control.Lens                    (makeLenses, (^.))
+import Options.Applicative
 
-data DiagramOpts = DiagramOpts
-                   { width     :: Maybe Int
-                   , height    :: Maybe Int
-                   , port      :: Int
-                   , selection :: Maybe String
-                   }
-  deriving (Show, Data, Typeable)
+data DiaOpts = DiaOpts 
+  { _width  :: Maybe Int -- ^ Final output width of diagram.
+  , _height :: Maybe Int -- ^ Final height of diagram.
+  , _port   :: Int       -- ^ Port on which to start web server.
+  } deriving (Show, Data, Typeable)
 
-diagramOpts :: String -> Bool -> DiagramOpts
-diagramOpts prog sel = DiagramOpts
-  { width =  def
-             &= typ "INT"
-             &= help "Desired width of the output image"
+makeLenses ''DiaOpts
 
-  , height = def
-             &= typ "INT"
-             &= help "Desired height of the output image"
+diaOpts :: Parser DiaOpts
+diaOpts = DiaOpts
+  <$> (optional . option)
+      (long "width" <> short 'w'
+    <> metavar "WIDTH"
+    <> help "Desired WIDTH of the output image")
+  <*> (optional . option)
+      (long "height" <> short 'h'
+    <> metavar "HEIGHT"
+    <> help "Desired HEIGHT of the output image")
+  <*> option
+      (long "port" <> short 'p' 
+    <> value 3000
+    <> metavar "PORT"
+    <> help "Port on which to satrt the web server (default 3000)")
 
-  -- , output = def
-  --          &= typFile
-  --          &= help "Output file"
-
-  , port   = 3000
-           &= typ "PORT"  
-           &= help "Port on which to start the web server (default 3000)"
-           
-  , selection = def
-              &= help "Name of the diagram to render"
-              &= (if sel then typ "NAME" else ignore)
-  }
-  &= summary "Command-line diagram generation."
-  &= program prog
-
+instance Parseable DiaOpts where
+  parser = diaOpts
+  
 defaultMain :: Diagram Canvas R2 -> IO ()
-defaultMain d = do
-  prog <- getProgName
-  opts <- cmdArgs (diagramOpts prog False)
-  canvasRender opts d
+defaultMain = mainWith
+    
+instance Mainable (Diagram Canvas R2) where
+  type MainOpts (Diagram Canvas R2) = DiaOpts
+  
+  mainRender opts d = canvasRender opts d
 
-canvasRender :: DiagramOpts -> Diagram Canvas R2 -> IO ()
-canvasRender opts d = BC.blankCanvas (fromIntegral (port opts)) (canvasDia opts d)
+canvasRender :: DiaOpts -> Diagram Canvas R2 -> IO ()
+canvasRender opts d = BC.blankCanvas (fromIntegral (opts^.port)) (canvasDia opts d)
 
-canvasDia :: DiagramOpts -> Diagram Canvas R2 -> BC.DeviceContext -> IO ()
+canvasDia :: DiaOpts -> Diagram Canvas R2 -> BC.DeviceContext -> IO ()
 canvasDia opts d context = do
   BC.send context $
     renderDia 
       Canvas 
       (CanvasOptions 
         (mkSizeSpec 
-          (fromIntegral <$> width opts) 
-          (fromIntegral <$> height opts))) 
+          (fromIntegral <$> opts^.width) 
+          (fromIntegral <$> opts^.height))) 
     d
 
 multiMain :: [(String, Diagram Canvas R2)] -> IO ()
-multiMain ds = do
-  prog <- getProgName
-  opts <- cmdArgs (diagramOpts prog True)
-  case selection opts of
-    Nothing  -> putStrLn "No diagram selected."
-    Just sel -> case lookup sel ds of
-      Nothing -> putStrLn $ "Unknown diagram: " ++ sel
-      Just d  -> canvasRender opts d
-      
+multiMain = mainWith
 
-mainWith :: Diagram Canvas R2 -> IO ()
-mainWith = defaultMain       -- for now
+instance Mainable [(String, Diagram Canvas R2)] -> IO () where
+    type MainOpts [(String, Diagram Canvas R2)]
+      = (MainOpts (Diagram Canvas R2), DiagramMultiOpts)
+
+    mainRender = defaultMultiMainRender
