@@ -12,11 +12,14 @@ t3 = pt <> alignedText 0.76 0.5  "(0.7, 0.5)" # fontSizeO 20 <> rect 8 1 # lwO 1
 t4 = pt <> text  "Hello world!" # fontSizeN 0.05 <> rect 8 1 # lwO 1
 d1 =/= d2 = d1 === strutY 2 === d2
 
-example :: Diagram B R2
-example = t1 =/= t2 =/= t3 =/= t4
+-- example :: Diagram B R2
+-- example = t1 =/= t2 =/= t3 =/= t4
 
+eff = text "M" <> square 1
 
-f = text "F" # fontSize (Local 13) <> square 1
+example :: Diagram Canvas R2
+example = hcat
+  [eff, eff # scale 2, eff # scaleX 2, eff # scaleY 2, eff # rotateBy (1/12)]
+    # fontSize (Local 1)
 
--- main = defaultMain (f ||| f # scale 2)
-main = defaultMain $ example ||| strutX 0.25 ||| example # scale 2
+main = mainWith example

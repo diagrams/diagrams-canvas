@@ -21,8 +21,52 @@
 -- A full-featured rendering backend for diagrams using Canvas.
 -- Implemented using the blank-canvas platform.
 --
--- To invoke the Canvas backend, you can use the 
--- "Diagrams.Backend.Canvas.CmdLine" module.
+-- To invoke the Canvas backend, you have three options.
+--
+-- * You can use the "Diagrams.Backend.Canvas.CmdLine" module to create
+--   standalone executables which will display the diagram in a browser
+--   using a web service.
+--
+-- * You can use the 'renderCanvas' function provided by this module,
+--   which gives you more programmatic control over when and
+--   how images are displayed (making it east to, for example, write a
+--   single program that displays multiple images, or one that diaplays
+--   images dynamically based on user input, and so on).
+--
+-- * For the most flexiblity you can invoke the 'renderDia' method from
+--   'Diagrams.Core.Types.Backend' instance for @Canvas@. In particular,
+--   'Diagrams.Core.Types.renderDia' has the generic type
+--
+-- > renderDia :: b -> Options b v -> QDiagram b v m -> Result b v
+--
+-- (omitting a few type class contraints). @b@ represents the
+-- backend type, @v@ the vector space, and @m@ the type of monoidal
+-- query annotations on the diagram. 'Options' and 'Result' are
+-- associated data and type families, respectively, which yield the
+-- type of option records and rendering results specific to any 
+-- particular backend. For @b ~ Canvas@ and @v ~ R2@, we have
+--
+-- > data Options Canvas R2 = CanvaseOptions
+-- >  { _size :: SizeSpec2D -- ^^ The requested size
+-- >  }
+--
+-- @
+-- data family Render Canvas R2 = C (RenderM ())
+-- @
+--
+-- @
+-- type family Result Canvas R2 = Canvas ()
+-- @
+--
+-- So the type of 'renderDia' resolves to
+--
+-- @
+-- renderDia :: Canvas -> Options Canvas R2 -> QDiagram Canvas R2 m ->
+-- Canvas()
+-- @
+--
+-- which you could call like @renderDia Canvas (CanvaseOptions (width 250))
+-- myDiagram@
 --
 ------------------------------------------------------------------------------
 
@@ -31,6 +75,9 @@ module Diagrams.Backend.Canvas
   ( Canvas(..) -- rendering token
   , B
   , Options(..) -- for rendering options specific to Canvas
+  
+  , renderCanvas
+
   ) where
 
 import           Control.Arrow                ((***))
@@ -395,3 +442,8 @@ instance Renderable Text Canvas where
     -- img <- liftC $ BC.newImage (T.pack file)
     -- liftC $ BC.drawImage (img, [0, 0, fromIntegral w, fromIntegral h])
     -- C.restore
+
+renderCanvas :: Int -> SizeSpec2D -> Diagram Canvas R2 -> IO ()
+renderCanvas port sizeSpec d = BC.blankCanvas (fromIntegral port) . flip BC.send $ img
+    where
+      img = renderDia Canvas (CanvasOptions sizeSpec) d

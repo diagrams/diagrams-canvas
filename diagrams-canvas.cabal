@@ -9,13 +9,15 @@ License:             BSD3
 License-file:        LICENSE
 Author:              Jeffrey Rosenbluth, Ryan Yates, Brent Yorgey, Andy Gill
 Maintainer:          diagrams-discuss@googlegroups.com
+Bug-reports:         http://github.com/diagrams/diagrams-canvas/issues
 Stability:           Experimental
 Category:            Graphics
 Build-type:          Simple
-Cabal-version:       >=1.8
+Extra-source-files:  README.md
+Cabal-version:       >=1.10
 Source-repository head
   type:     git
-  location: https://github.com/ku-fpg/diagrams-canvas.git
+  location: https://github.com/diagrams/diagrams-canvas.git
 
 Library
   Exposed-modules:     Diagrams.Backend.Canvas
@@ -35,3 +37,5 @@ Library
                        data-default-class >= 0.0.1 && < 0.1,
                        statestack >= 0.2 && <0.3,
                        optparse-applicative >= 0.9 && < 0.10
+
+  Default-language:    Haskell2010
