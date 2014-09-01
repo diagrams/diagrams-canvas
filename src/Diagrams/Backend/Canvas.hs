@@ -434,14 +434,14 @@ instance Renderable Text Canvas where
     liftC $ BC.fillText (T.pack str, 0, 0)
     restore
 
--- instance Renderable (DImage External) Canvas where
-  -- render _ (DImage path w h tr) = C $ do
-    -- let ImageRef file = path
-    -- C.save
-    -- C.canvasTransform (tr <> reflectionY)
-    -- img <- liftC $ BC.newImage (T.pack file)
-    -- liftC $ BC.drawImage (img, [0, 0, fromIntegral w, fromIntegral h])
-    -- C.restore
+instance Renderable (DImage External) Canvas where
+  render _ (DImage path w h tr) = C $ do
+    let ImageRef file = path
+    save
+    canvasTransform (tr <> reflectionY)
+    img <- liftC $ BC.newImage (T.pack file)
+    liftC $ BC.drawImage (img, [fromIntegral (-w) / 2, fromIntegral (-h) / 2, fromIntegral w, fromIntegral h])
+    restore
 
 renderCanvas :: Int -> SizeSpec2D -> Diagram Canvas R2 -> IO ()
 renderCanvas port sizeSpec d = BC.blankCanvas (fromIntegral port) . flip BC.send $ img
