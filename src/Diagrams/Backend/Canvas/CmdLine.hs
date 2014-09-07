@@ -80,15 +80,15 @@ makeLenses ''DiaOpts
 
 diaOpts :: Parser DiaOpts
 diaOpts = DiaOpts
-  <$> (optional . option)
+  <$> (optional . option auto)
       (long "width" <> short 'w'
     <> metavar "WIDTH"
     <> help "Desired WIDTH of the output image")
-  <*> (optional . option)
+  <*> (optional . option auto)
       (long "height" <> short 'h'
     <> metavar "HEIGHT"
     <> help "Desired HEIGHT of the output image")
-  <*> option
+  <*> option auto
       (long "port" <> short 'p' 
     <> value 3000
     <> metavar "PORT"
