@@ -1,5 +1,5 @@
 Name:                diagrams-canvas
-Version:             0.2.0.1
+Version:             0.2.0.2
 Synopsis:            HTML5 canvas backend for diagrams drawing EDSL
 Description:         This package provides a modular backend for rendering
                      diagrams created with the diagrams EDSL using an
@@ -36,6 +36,6 @@ Library
                        text >= 1.0 && < 1.2,
                        data-default-class >= 0.0.1 && < 0.1,
                        statestack >= 0.2 && <0.3,
-                       optparse-applicative >= 0.9 && < 0.10
+                       optparse-applicative >= 0.10 && < 0.11
 
   Default-language:    Haskell2010
