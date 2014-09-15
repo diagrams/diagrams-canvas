@@ -25,7 +25,7 @@ shaft0 = trailFromSegments [parab, seg, parab', seg, parab]
 shaft1 = cubicSpline False (trailVertices (shaft0 `at` origin))
 shaft2 = cubicSpline False (map p2 [(0,0), (1,0), (0.8, 0.2),(2, 0.2)])
 
-example :: Diagram B R2
+example :: Diagram B V2 Float
 example = connect'        arrow1 "1" "2"
         . connect'        arrow2 "4" "3"
         . connect'        arrow3 "1" "6"

@@ -2,7 +2,7 @@
 
 module Main where
 
-import Diagrams.Prelude
+import Diagrams.Prelude hiding (dot)
 import Diagrams.Backend.Canvas.CmdLine
 import Control.Lens ((^.))
 
@@ -17,9 +17,9 @@ w      = cos (alpha ^. rad)
 dot    = circle 0.03 # lw none # fc red
 sircle = circle 1 # lw veryThin # dashingN [0.01, 0.01] 0
 
-back     = arc' 1 theta (negateV theta)
+back     = arc' 1 (xDir # rotate theta) (negated theta)
 back'    = back # reflectX # translateX (2 * chordX)
-thetaArc = arc' 0.15 (0 @@ rad) theta # lw veryThin
+thetaArc = arc' 0.15 xDir theta # lw veryThin
 
 top   = (1 ^& 0) ~~ (chordX ^& chordY)
 bot   = reflectY top
@@ -27,19 +27,19 @@ hd    = fc lightgray . lw none . translateX 1 . strokeTrail . glueTrail
       . mconcat $ [top, back', bot]
 chord = lc green . stroke $ (chordX ^& chordY) ~~ (chordX ^& 0)
 
-drawLine :: R2 -> Diagram B R2
+drawLine :: V2 Float -> Diagram B V2 Float
 drawLine = stroke . fromOffsets . (:[])
 
 r1       = dashingN [0.01, 0.01] 0 . lw veryThin . drawLine $ (1 ^& 0)
 r_1      = lc green . reflectX . drawLine $ (1 ^& 0)
-rTheta   = lc green . drawLine $ fromDirection theta
-rj       = lc green . drawLine $ fromDirection alpha 
+rTheta   = lc green . drawLine $ unitX # rotate theta
+rj       = lc green . drawLine $ unitX # rotate alpha 
 rMid     = lc green . drawLine $ (-midX ^& 0)
 
 
 -------------------------------------------------------------------------------
 
-text' :: String -> Diagram B R2
+text' :: String -> Diagram B V2 Float
 text' s = text s # italic # fontSize (Output 13)
 
 aLabel       = text' "a" # translate (0.05 ^& 0.2)
@@ -52,7 +52,7 @@ wLabel       = text' "w/2" # translate (-0.8 ^& (-0.15))
 jLabel       = text' "j" # translate (-(0.95) ^& 0.06) 
 r_jLabel     = text' "r - j" # translate (-(0.6) ^& 0.06)
 hght         = (w ^& 0) ~~ (w ^& h)
-jArc         = arc' 1 alpha (pi @@ rad)
+jArc         = arc' 1 (xDir # rotate alpha) (pi @@ rad)
 jt           = fc lightgray 
              . lc green 
              . translate (w ^& 0) 
@@ -60,7 +60,7 @@ jt           = fc lightgray
              . closeTrail 
              . mconcat $ [hght, jArc]
 
-aHead :: Diagram B R2
+aHead :: Diagram B V2 Float
 aHead = aLabel <> rsinaLabel <> rLabel <> rcosaLabel <> lengthLabel
   <> back # lc red 
   <> chord
@@ -68,7 +68,7 @@ aHead = aLabel <> rsinaLabel <> rLabel <> rcosaLabel <> lengthLabel
   <> thetaArc
   <> dot <> sircle <> hd
 
-aJoint :: Diagram B R2
+aJoint :: Diagram B V2 Float
 aJoint = rLabel # translate (-0.25 ^& 0.1) 
       <> wLabel <> jLabel <> r_jLabel <> jLengthLabel
       <> jt

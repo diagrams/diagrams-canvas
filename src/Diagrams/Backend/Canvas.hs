@@ -101,7 +101,6 @@ import           Diagrams.TwoD.Adjust         (adjustDia2D)
 import           Diagrams.TwoD.Attributes     (splitTextureFills)
 import           Diagrams.TwoD.Path           (Clip (Clip))
 import           Diagrams.TwoD.Text
-import           Diagrams.TwoD.Types          (R2(..))
 
 import           Diagrams.Core.Compile
 import           Diagrams.Core.Transform      (matrixHomRep)
@@ -205,23 +204,20 @@ closePath = liftC $ BC.closePath ()
 
 moveTo :: Float -> Float -> RenderM ()
 moveTo x y = do
-  let x' = realToFrac x
-      y' = realToFrac y
-  liftC $ BC.moveTo (x', y')
-  move (x', y')
+  liftC $ BC.moveTo (x, y)
+  move (x, y)
 
 relLineTo :: Float -> Float -> RenderM ()
 relLineTo x y = do
   p <- use csPos
-  let p' = p + (realToFrac x, realToFrac y)
+  let p' = p + (x, y)
   liftC $ BC.lineTo p'
   move p'
 
 relCurveTo :: Float -> Float -> Float -> Float -> Float -> Float -> RenderM ()
 relCurveTo ax ay bx by cx cy = do
   p <- use csPos
-  let [(ax',ay'),(bx',by'),(cx',cy')] = map ((p +) . (realToFrac *** realToFrac))
-                                          [(ax,ay),(bx,by),(cx,cy)]
+  let [(ax',ay'),(bx',by'),(cx',cy')] = map (p +) [(ax,ay),(bx,by),(cx,cy)]
   liftC $ BC.bezierCurveTo (ax',ay',bx',by',cx',cy')
   move (cx', cy')
 
@@ -242,7 +238,8 @@ stroke = do
   -- The default value of 0.5 is somewhat arbitary since lineWidth should neve
   -- be 'Nothing'. 0.5 is choose since it is the lower bound of the
   -- default.
-  w <- fromMaybe 0.5 <$> getStyleAttrib (fromOutput . getLineWidth :: LineWidth Float -> Float)
+  w <- fromMaybe 0.5 <$> getStyleAttrib 
+                        (fromOutput . getLineWidth :: LineWidth Float -> Float)
   when (w > 0) (liftC $ BC.stroke ())
 
 fill :: RenderM ()
@@ -269,12 +266,9 @@ texture u (LG g) _ = liftC $ do
     Fill -> S.fillStyle grd
     Strk -> S.strokeStyle grd
   where
-    (x0', y0') = unp2 $ transform (g^.lGradTrans) (g^.lGradStart)
-    (x1', y1') = unp2 $ transform (g^.lGradTrans) (g^.lGradEnd)
-    (x0, y0, x1, y1) = ( realToFrac x0', realToFrac y0'
-                       , realToFrac x1', realToFrac y1')
-    stops = map (\s -> ( realToFrac (s^.stopFraction)
-                       , showColorJS (s^.stopColor) 1)) (g^.lGradStops)
+    (x0, y0) = unp2 $ transform (g^.lGradTrans) (g^.lGradStart)
+    (x1, y1) = unp2 $ transform (g^.lGradTrans) (g^.lGradEnd)
+    stops = map (\s -> ( s^.stopFraction , showColorJS (s^.stopColor) 1)) (g^.lGradStops)
 
 texture u (RG g) _ = liftC $ do
   grd <- BC.createRadialGradient (x0, y0, r0, x1, y1, r1)
@@ -283,14 +277,11 @@ texture u (RG g) _ = liftC $ do
     Fill -> S.fillStyle grd
     Strk -> S.strokeStyle grd
   where
-    (r0, r1) = (s * realToFrac (g^.rGradRadius0), s * realToFrac  (g^.rGradRadius1))
-    (x0', y0') = unp2 $ transform (g^.rGradTrans) (g^.rGradCenter0)
-    (x1', y1') = unp2 $ transform (g^.rGradTrans) (g^.rGradCenter1)
-    (x0, y0, x1, y1) = ( realToFrac x0', realToFrac y0'
-                       , realToFrac x1', realToFrac y1')
-    stops = map (\st -> ( realToFrac (st^.stopFraction)
-                        , showColorJS (st^.stopColor) 1)) (g^.rGradStops)
-    s = realToFrac . avgScale $ (g^.rGradTrans)
+    (r0, r1) = (s * g^.rGradRadius0, s * g^.rGradRadius1)
+    (x0, y0) = unp2 $ transform (g^.rGradTrans) (g^.rGradCenter0)
+    (x1, y1) = unp2 $ transform (g^.rGradTrans) (g^.rGradCenter1)
+    stops = map (\st -> ( st^.stopFraction , showColorJS (st^.stopColor) 1)) (g^.rGradStops)
+    s = avgScale $ g^.rGradTrans
 
 showColorJS :: (Color c) => c -> Float  -> T.Text
 showColorJS c o = T.concat
