@@ -12,8 +12,8 @@ cGrid = (vcat' $ with & sep .~ 4)
       . chunksOf 3 $ cs
 
 -- For the Shafts.
-semicircle    = arc (5/12 @@ turn) (11/12 @@ turn)
-quartercircle = arc (1/2 @@ turn) (3/4 @@ turn)
+semicircle    = arc xDir (2/5 @@ turn)
+quartercircle = arc xDir (1/4 @@ turn)
 
 parab  = bezier3 (1 ^& 1) (1 ^& 1) (0 ^& 2)
 parab' = reflectX parab
