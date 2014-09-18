@@ -319,15 +319,15 @@ strokeTexture = texture Strk
 fillTexture :: Texture -> Double  -> RenderM ()
 fillTexture = texture Fill
 
-fromLineCap :: LineCap -> T.Text
-fromLineCap LineCapRound  = "round"
-fromLineCap LineCapSquare = "square"
-fromLineCap _             = "butt"
+fromLineCap :: LineCap -> BC.LineEndCap
+fromLineCap LineCapRound  = BC.RoundCap
+fromLineCap LineCapSquare = BC.SquareCap
+fromLineCap _             = BC.ButtCap
 
-fromLineJoin :: LineJoin -> T.Text
-fromLineJoin LineJoinRound = "round"
-fromLineJoin LineJoinBevel = "bevel"
-fromLineJoin _             = "miter"
+fromLineJoin :: LineJoin -> BC.LineJoinCorner
+fromLineJoin LineJoinRound = BC.RoundCorner
+fromLineJoin LineJoinBevel = BC.BevelCorner
+fromLineJoin _             = BC.MiterCorner
 
 showFontJS :: FontWeight -> FontSlant -> Double -> String -> T.Text
 showFontJS wgt slant sz fnt = T.concat [a, " ", b, " ", c, " ", d]
@@ -414,17 +414,17 @@ instance Renderable Text Canvas where
                         else sz
         fnt = showFontJS fw slant fSize tf
         vAlign = case al of
-                   BaselineText -> T.pack "alphabetic"
+                   BaselineText -> BC.AlphabeticBaseline
                    BoxAlignedText _ h -> case h of
-                     h' | h' <= 0.25 -> T.pack "bottom"
-                     h' | h' >= 0.75 -> T.pack "top"
-                     _ -> T.pack "middle"
+                     h' | h' <= 0.25 -> BC.BottomBaseline
+                     h' | h' >= 0.75 -> BC.TopBaseline
+                     _ -> BC.MiddleBaseline
         hAlign = case al of
-                   BaselineText -> T.pack "start"
+                   BaselineText -> BC.StartAnchor
                    BoxAlignedText w _ -> case w of
-                     w' | w' <= 0.25 -> T.pack "start"
-                     w' | w' >= 0.75 -> T.pack "end"
-                     _ -> T.pack "center"
+                     w' | w' <= 0.25 -> BC.StartAnchor
+                     w' | w' >= 0.75 -> BC.EndAnchor
+                     _ -> BC.CenterAnchor
     save
     liftC $ BC.textBaseline vAlign
     liftC $ BC.textAlign hAlign
