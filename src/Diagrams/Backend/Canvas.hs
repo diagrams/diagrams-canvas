@@ -43,7 +43,7 @@
 -- backend type, @v@ the vector space, and @m@ the type of monoidal
 -- query annotations on the diagram. 'Options' and 'Result' are
 -- associated data and type families, respectively, which yield the
--- type of option records and rendering results specific to any 
+-- type of option records and rendering results specific to any
 -- particular backend. For @b ~ Canvas@ and @v ~ R2@, we have
 --
 -- > data Options Canvas R2 = CanvaseOptions
@@ -75,7 +75,7 @@ module Diagrams.Backend.Canvas
   ( Canvas(..) -- rendering token
   , B
   , Options(..) -- for rendering options specific to Canvas
-  
+
   , renderCanvas
 
   ) where
@@ -95,7 +95,7 @@ import           Data.Tree                    (Tree(Node))
 import           Data.Typeable                (Typeable)
 import           Data.Word                    (Word8)
 
-import           Diagrams.Attributes 
+import           Diagrams.Attributes
 import           Diagrams.Prelude             hiding (fillTexture, moveTo, stroke)
 import           Diagrams.TwoD.Adjust         (adjustDia2D)
 import           Diagrams.TwoD.Attributes     (splitTextureFills)
@@ -110,7 +110,7 @@ import           Diagrams.Core.Types          (Annotation (..))
 import qualified Graphics.Blank               as BC
 import qualified Graphics.Blank.Style         as S
 
--- | This data declaration is simply used as a token to distinguish 
+-- | This data declaration is simply used as a token to distinguish
 --   this rendering engine.
 data Canvas = Canvas
     deriving (Eq, Ord, Read, Show, Typeable)
@@ -118,7 +118,7 @@ data Canvas = Canvas
 type B = Canvas
 
 data CanvasState = CanvasState { _accumStyle :: Style R2
-                               , _csPos :: (Float, Float) }
+                               , _csPos :: (Double, Double) }
 
 makeLenses ''CanvasState
 
@@ -145,7 +145,7 @@ instance Backend Canvas R2 where
           { _canvasSize   :: SizeSpec2D   -- ^ the requested size
           }
 
-  renderRTree :: Canvas -> Options Canvas R2 -> RTree Canvas R2 Annotation 
+  renderRTree :: Canvas -> Options Canvas R2 -> RTree Canvas R2 Annotation
                         -> Result Canvas R2
   renderRTree _ _ rt = evalState canvasOutput initialCanvasRenderState
     where
@@ -188,7 +188,7 @@ setSize o s = o {_canvasSize = s}
 size :: Lens' (Options Canvas R2) SizeSpec2D
 size = lens getSize setSize
 
-move :: (Float, Float) -> RenderM ()
+move :: (Double, Double) -> RenderM ()
 move p = do csPos .= p
 
 save :: RenderM ()
@@ -307,7 +307,7 @@ showColorJS c o = T.concat
 
 canvasTransform :: T2 -> RenderM ()
 canvasTransform tr = liftC $ BC.transform vs
-    where 
+    where
       [[ax, ay], [bx, by], [tx, ty]] = matrixHomRep tr
       vs = (realToFrac ax,realToFrac ay
            ,realToFrac bx,realToFrac by
@@ -347,7 +347,7 @@ renderC a = case (render Canvas a) of C r -> r
 
 canvasStyle :: Style v -> RenderM ()
 canvasStyle s = sequence_
-              . catMaybes $ [ handle clip' 
+              . catMaybes $ [ handle clip'
                             , handle lWidth
                             , handle lCap
                             , handle lJoin
