@@ -97,18 +97,18 @@ diaOpts = DiaOpts
 instance Parseable DiaOpts where
   parser = diaOpts
   
-defaultMain :: Diagram Canvas V2 Float -> IO ()
+defaultMain :: Diagram Canvas V2 Double -> IO ()
 defaultMain = mainWith
     
-instance Mainable (Diagram Canvas V2 Float) where
-  type MainOpts (Diagram Canvas V2 Float) = DiaOpts
+instance Mainable (Diagram Canvas V2 Double) where
+  type MainOpts (Diagram Canvas V2 Double) = DiaOpts
   
   mainRender opts d = canvasRender opts d
 
-canvasRender :: DiaOpts -> Diagram Canvas V2 Float -> IO ()
+canvasRender :: DiaOpts -> Diagram Canvas V2 Double -> IO ()
 canvasRender opts d = BC.blankCanvas (fromIntegral (opts^.port)) (canvasDia opts d)
 
-canvasDia :: DiaOpts -> Diagram Canvas V2 Float -> BC.DeviceContext -> IO ()
+canvasDia :: DiaOpts -> Diagram Canvas V2 Double -> BC.DeviceContext -> IO ()
 canvasDia opts d context = do
   BC.send context $
     renderDia 
@@ -119,11 +119,11 @@ canvasDia opts d context = do
           (fromIntegral <$> opts^.height))) 
     d
 
-multiMain :: [(String, Diagram Canvas V2 Float)] -> IO ()
+multiMain :: [(String, Diagram Canvas V2 Double)] -> IO ()
 multiMain = mainWith
 
-instance Mainable [(String, Diagram Canvas V2 Float)] where
-  type MainOpts [(String, Diagram Canvas V2 Float)] = 
-    (MainOpts (Diagram Canvas V2 Float), DiagramMultiOpts)
+instance Mainable [(String, Diagram Canvas V2 Double)] where
+  type MainOpts [(String, Diagram Canvas V2 Double)] = 
+    (MainOpts (Diagram Canvas V2 Double), DiagramMultiOpts)
 
   mainRender = defaultMultiMainRender
