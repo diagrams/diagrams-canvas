@@ -43,7 +43,7 @@
 -- backend type, @v@ the vector space, and @m@ the type of monoidal
 -- query annotations on the diagram. 'Options' and 'Result' are
 -- associated data and type families, respectively, which yield the
--- type of option records and rendering results specific to any 
+-- type of option records and rendering results specific to any
 -- particular backend. For @b ~ Canvas@ and @v ~ R2@, we have
 --
 -- > data Options Canvas V2 Double = CanvaseOptions
@@ -75,12 +75,11 @@ module Diagrams.Backend.Canvas
   ( Canvas(..) -- rendering token
   , B
   , Options(..) -- for rendering options specific to Canvas
-  
+
   , renderCanvas
 
   ) where
 
-import           Control.Arrow                ((***))
 import           Control.Lens                 hiding (transform, (#))
 import           Control.Monad.State          (when, State, evalState)
 import qualified Control.Monad.StateStack     as SS
@@ -95,7 +94,7 @@ import           Data.Tree                    (Tree(Node))
 import           Data.Typeable                (Typeable)
 import           Data.Word                    (Word8)
 
-import           Diagrams.Attributes 
+import           Diagrams.Attributes
 import           Diagrams.Prelude             hiding (fillTexture, moveTo, stroke, size)
 import           Diagrams.TwoD.Adjust         (adjustDia2D)
 import           Diagrams.TwoD.Attributes     (splitTextureFills)
@@ -109,7 +108,7 @@ import           Diagrams.Core.Types          (Annotation (..))
 import qualified Graphics.Blank               as BC
 import qualified Graphics.Blank.Style         as S
 
--- | This data declaration is simply used as a token to distinguish 
+-- | This data declaration is simply used as a token to distinguish
 --   this rendering engine.
 data Canvas = Canvas
     deriving (Eq, Ord, Read, Show, Typeable)
@@ -144,7 +143,7 @@ instance Backend Canvas V2 Double where
           { _canvasSize   :: SizeSpec2D Double   -- ^ the requested size
           }
 
-  renderRTree :: Canvas -> Options Canvas V2 Double -> RTree Canvas V2 Double Annotation 
+  renderRTree :: Canvas -> Options Canvas V2 Double -> RTree Canvas V2 Double Annotation
                         -> Result Canvas V2 Double
   renderRTree _ _ rt = evalState canvasOutput initialCanvasRenderState
     where
@@ -238,7 +237,7 @@ stroke = do
   -- The default value of 0.5 is somewhat arbitary since lineWidth should neve
   -- be 'Nothing'. 0.5 is choose since it is the lower bound of the
   -- default.
-  w <- fromMaybe 0.5 <$> getStyleAttrib 
+  w <- fromMaybe 0.5 <$> getStyleAttrib
                         (fromOutput . getLineWidth :: LineWidth Double -> Double)
   when (w > 0) (liftC $ BC.stroke ())
 
@@ -298,7 +297,7 @@ showColorJS c o = T.concat
 
 canvasTransform :: T2 Double -> RenderM ()
 canvasTransform tr = liftC $ BC.transform vs
-    where 
+    where
       [[ax, ay], [bx, by], [tx, ty]] = matrixHomRep tr
       vs = (realToFrac ax,realToFrac ay
            ,realToFrac bx,realToFrac by
@@ -338,7 +337,7 @@ renderC a = case (render Canvas a) of C r -> r
 
 canvasStyle :: Style v Double  -> RenderM ()
 canvasStyle s = sequence_
-              . catMaybes $ [ handle clip' 
+              . catMaybes $ [ handle clip'
                             , handle lWidth
                             , handle lCap
                             , handle lJoin
