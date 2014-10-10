@@ -12,8 +12,8 @@ cGrid = (vcat' $ with & sep .~ 4)
       . chunksOf 3 $ cs
 
 -- For the Shafts.
-semicircle    = arc (5/12 @@ turn) (11/12 @@ turn)
-quartercircle = arc (1/2 @@ turn) (3/4 @@ turn)
+semicircle    = arc xDir (2/5 @@ turn)
+quartercircle = arc xDir (1/4 @@ turn)
 
 parab  = bezier3 (1 ^& 1) (1 ^& 1) (0 ^& 2)
 parab' = reflectX parab
@@ -25,7 +25,7 @@ shaft0 = trailFromSegments [parab, seg, parab', seg, parab]
 shaft1 = cubicSpline False (trailVertices (shaft0 `at` origin))
 shaft2 = cubicSpline False (map p2 [(0,0), (1,0), (0.8, 0.2),(2, 0.2)])
 
-example :: Diagram B R2
+example :: Diagram B V2 Float
 example = connect'        arrow1 "1" "2"
         . connect'        arrow2 "4" "3"
         . connect'        arrow3 "1" "6"

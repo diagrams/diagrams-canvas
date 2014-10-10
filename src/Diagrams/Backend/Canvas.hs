@@ -46,22 +46,22 @@
 -- type of option records and rendering results specific to any
 -- particular backend. For @b ~ Canvas@ and @v ~ R2@, we have
 --
--- > data Options Canvas R2 = CanvaseOptions
+-- > data Options Canvas V2 Double = CanvaseOptions
 -- >  { _size :: SizeSpec2D -- ^^ The requested size
 -- >  }
 --
 -- @
--- data family Render Canvas R2 = C (RenderM ())
+-- data family Render Canvas V2 Double = C (RenderM ())
 -- @
 --
 -- @
--- type family Result Canvas R2 = Canvas ()
+-- type family Result Canvas V2 Double = Canvas ()
 -- @
 --
 -- So the type of 'renderDia' resolves to
 --
 -- @
--- renderDia :: Canvas -> Options Canvas R2 -> QDiagram Canvas R2 m ->
+-- renderDia :: Canvas -> Options Canvas V2 Double -> QDiagram Canvas V2 Double m ->
 -- Canvas()
 -- @
 --
@@ -80,7 +80,6 @@ module Diagrams.Backend.Canvas
 
   ) where
 
-import           Control.Arrow                ((***))
 import           Control.Lens                 hiding (transform, (#))
 import           Control.Monad.State          (when, State, evalState)
 import qualified Control.Monad.StateStack     as SS
@@ -96,12 +95,11 @@ import           Data.Typeable                (Typeable)
 import           Data.Word                    (Word8)
 
 import           Diagrams.Attributes
-import           Diagrams.Prelude             hiding (fillTexture, moveTo, stroke)
+import           Diagrams.Prelude             hiding (fillTexture, moveTo, stroke, size)
 import           Diagrams.TwoD.Adjust         (adjustDia2D)
 import           Diagrams.TwoD.Attributes     (splitTextureFills)
 import           Diagrams.TwoD.Path           (Clip (Clip))
 import           Diagrams.TwoD.Text
-import           Diagrams.TwoD.Types          (R2(..))
 
 import           Diagrams.Core.Compile
 import           Diagrams.Core.Transform      (matrixHomRep)
@@ -117,7 +115,7 @@ data Canvas = Canvas
 
 type B = Canvas
 
-data CanvasState = CanvasState { _accumStyle :: Style R2
+data CanvasState = CanvasState { _accumStyle :: Style V2 Double
                                , _csPos :: (Double, Double) }
 
 makeLenses ''CanvasState
@@ -134,19 +132,19 @@ liftC = lift
 runRenderM :: RenderM a -> BC.Canvas a
 runRenderM = flip SS.evalStateStackT def
 
-instance Monoid (Render Canvas R2) where
+instance Monoid (Render Canvas V2 Double) where
   mempty  = C $ return ()
   (C c1) `mappend` (C c2) = C (c1 >> c2)
 
-instance Backend Canvas R2 where
-  data Render  Canvas R2 = C (RenderM ())
-  type Result  Canvas R2 = BC.Canvas ()
-  data Options Canvas R2 = CanvasOptions
-          { _canvasSize   :: SizeSpec2D   -- ^ the requested size
+instance Backend Canvas V2 Double where
+  data Render  Canvas V2 Double = C (RenderM ())
+  type Result  Canvas V2 Double = BC.Canvas ()
+  data Options Canvas V2 Double = CanvasOptions
+          { _canvasSize   :: SizeSpec2D Double   -- ^ the requested size
           }
 
-  renderRTree :: Canvas -> Options Canvas R2 -> RTree Canvas R2 Annotation
-                        -> Result Canvas R2
+  renderRTree :: Canvas -> Options Canvas V2 Double -> RTree Canvas V2 Double Annotation
+                        -> Result Canvas V2 Double
   renderRTree _ _ rt = evalState canvasOutput initialCanvasRenderState
     where
       canvasOutput :: State CanvasRenderState (BC.Canvas ())
@@ -156,10 +154,10 @@ instance Backend Canvas R2 where
 
   adjustDia c opts d = adjustDia2D size c opts (d # reflectY)
 
-runC :: Render Canvas R2 -> RenderM ()
+runC :: Render Canvas V2 Double -> RenderM ()
 runC (C r) = r
 
-toRender :: RTree Canvas R2 Annotation -> Render Canvas R2
+toRender :: RTree Canvas V2 Double Annotation -> Render Canvas V2 Double
 toRender = fromRTree
   . Node (RStyle (mempty # recommendFillColor (transparent :: AlphaColour Double)))
   . (:[])
@@ -179,13 +177,13 @@ data CanvasRenderState = CanvasRenderState
 initialCanvasRenderState :: CanvasRenderState
 initialCanvasRenderState = CanvasRenderState
 
-getSize :: Options Canvas R2 -> SizeSpec2D
+getSize :: Options Canvas V2 Double -> SizeSpec2D Double
 getSize (CanvasOptions {_canvasSize = s}) = s
 
-setSize :: Options Canvas R2 -> SizeSpec2D -> Options Canvas R2
+setSize :: Options Canvas V2 Double -> (SizeSpec2D Double) -> Options Canvas V2 Double
 setSize o s = o {_canvasSize = s}
 
-size :: Lens' (Options Canvas R2) SizeSpec2D
+size :: Lens' (Options Canvas V2 Double)(SizeSpec2D Double)
 size = lens getSize setSize
 
 move :: (Double, Double) -> RenderM ()
@@ -205,23 +203,20 @@ closePath = liftC $ BC.closePath ()
 
 moveTo :: Double -> Double -> RenderM ()
 moveTo x y = do
-  let x' = realToFrac x
-      y' = realToFrac y
-  liftC $ BC.moveTo (x', y')
-  move (x', y')
+  liftC $ BC.moveTo (x, y)
+  move (x, y)
 
 relLineTo :: Double -> Double -> RenderM ()
 relLineTo x y = do
   p <- use csPos
-  let p' = p + (realToFrac x, realToFrac y)
+  let p' = p + (x, y)
   liftC $ BC.lineTo p'
   move p'
 
 relCurveTo :: Double -> Double -> Double -> Double -> Double -> Double -> RenderM ()
 relCurveTo ax ay bx by cx cy = do
   p <- use csPos
-  let [(ax',ay'),(bx',by'),(cx',cy')] = map ((p +) . (realToFrac *** realToFrac))
-                                          [(ax,ay),(bx,by),(cx,cy)]
+  let [(ax',ay'),(bx',by'),(cx',cy')] = map (p +) [(ax,ay),(bx,by),(cx,cy)]
   liftC $ BC.bezierCurveTo (ax',ay',bx',by',cx',cy')
   move (cx', cy')
 
@@ -242,7 +237,8 @@ stroke = do
   -- The default value of 0.5 is somewhat arbitary since lineWidth should neve
   -- be 'Nothing'. 0.5 is choose since it is the lower bound of the
   -- default.
-  w <- fromMaybe 0.5 <$> getStyleAttrib (fromOutput . getLineWidth)
+  w <- fromMaybe 0.5 <$> getStyleAttrib
+                        (fromOutput . getLineWidth :: LineWidth Double -> Double)
   when (w > 0) (liftC $ BC.stroke ())
 
 fill :: RenderM ()
@@ -256,7 +252,7 @@ byteRange d = floor (d * 255)
 
 data TextureUse = Fill | Strk
 
-texture :: TextureUse -> Texture -> Double -> RenderM()
+texture :: TextureUse -> Texture Double -> Double -> RenderM()
 texture u (SC (SomeColor c))  o = case u of
     Fill -> liftC . S.fillStyle   $ s
     Strk -> liftC . S.strokeStyle $ s
@@ -269,12 +265,9 @@ texture u (LG g) _ = liftC $ do
     Fill -> S.fillStyle grd
     Strk -> S.strokeStyle grd
   where
-    (x0', y0') = unp2 $ transform (g^.lGradTrans) (g^.lGradStart)
-    (x1', y1') = unp2 $ transform (g^.lGradTrans) (g^.lGradEnd)
-    (x0, y0, x1, y1) = ( realToFrac x0', realToFrac y0'
-                       , realToFrac x1', realToFrac y1')
-    stops = map (\s -> ( realToFrac (s^.stopFraction)
-                       , showColorJS (s^.stopColor) 1)) (g^.lGradStops)
+    (x0, y0) = unp2 $ transform (g^.lGradTrans) (g^.lGradStart)
+    (x1, y1) = unp2 $ transform (g^.lGradTrans) (g^.lGradEnd)
+    stops = map (\s -> ( s^.stopFraction , showColorJS (s^.stopColor) 1)) (g^.lGradStops)
 
 texture u (RG g) _ = liftC $ do
   grd <- BC.createRadialGradient (x0, y0, r0, x1, y1, r1)
@@ -283,29 +276,26 @@ texture u (RG g) _ = liftC $ do
     Fill -> S.fillStyle grd
     Strk -> S.strokeStyle grd
   where
-    (r0, r1) = (s * realToFrac (g^.rGradRadius0), s * realToFrac  (g^.rGradRadius1))
-    (x0', y0') = unp2 $ transform (g^.rGradTrans) (g^.rGradCenter0)
-    (x1', y1') = unp2 $ transform (g^.rGradTrans) (g^.rGradCenter1)
-    (x0, y0, x1, y1) = ( realToFrac x0', realToFrac y0'
-                       , realToFrac x1', realToFrac y1')
-    stops = map (\st -> ( realToFrac (st^.stopFraction)
-                        , showColorJS (st^.stopColor) 1)) (g^.rGradStops)
-    s = realToFrac . avgScale $ (g^.rGradTrans)
+    (r0, r1) = (s * g^.rGradRadius0, s * g^.rGradRadius1)
+    (x0, y0) = unp2 $ transform (g^.rGradTrans) (g^.rGradCenter0)
+    (x1, y1) = unp2 $ transform (g^.rGradTrans) (g^.rGradCenter1)
+    stops = map (\st -> ( st^.stopFraction , showColorJS (st^.stopColor) 1)) (g^.rGradStops)
+    s = avgScale $ g^.rGradTrans
 
 showColorJS :: (Color c) => c -> Double  -> T.Text
 showColorJS c o = T.concat
     [ "rgba("
-    , s r, ","
-    , s g, ","
-    , s b, ","
-    , T.pack (show $ a * o)
+    , s (realToFrac r), ","
+    , s (realToFrac g), ","
+    , s (realToFrac b), ","
+    , T.pack (show $ (realToFrac a) * o)
     , ")"
     ]
   where s :: Double -> T.Text
         s = T.pack . show . byteRange
         (r,g,b,a) = colorToSRGBA . toAlphaColour $  c
 
-canvasTransform :: T2 -> RenderM ()
+canvasTransform :: T2 Double -> RenderM ()
 canvasTransform tr = liftC $ BC.transform vs
     where
       [[ax, ay], [bx, by], [tx, ty]] = matrixHomRep tr
@@ -313,10 +303,10 @@ canvasTransform tr = liftC $ BC.transform vs
            ,realToFrac bx,realToFrac by
            ,realToFrac tx,realToFrac ty)
 
-strokeTexture :: Texture -> Double  -> RenderM ()
+strokeTexture :: Texture Double -> Double  -> RenderM ()
 strokeTexture = texture Strk
 
-fillTexture :: Texture -> Double  -> RenderM ()
+fillTexture :: Texture Double -> Double  -> RenderM ()
 fillTexture = texture Fill
 
 fromLineCap :: LineCap -> BC.LineEndCap
@@ -342,10 +332,10 @@ showFontJS wgt slant sz fnt = T.concat [a, " ", b, " ", c, " ", d]
     c = T.concat [T.pack $ show sz, "pt"]
     d = T.pack fnt
 
-renderC :: (Renderable a Canvas, V a ~ R2) => a -> RenderM ()
+renderC :: (Renderable a Canvas, V a ~ V2, N a ~ Double) => a -> RenderM ()
 renderC a = case (render Canvas a) of C r -> r
 
-canvasStyle :: Style v -> RenderM ()
+canvasStyle :: Style v Double  -> RenderM ()
 canvasStyle s = sequence_
               . catMaybes $ [ handle clip'
                             , handle lWidth
@@ -355,18 +345,18 @@ canvasStyle s = sequence_
   where handle :: (AttributeClass a) => (a -> RenderM ()) -> Maybe (RenderM ())
         handle f = f `fmap` getAttr s
         clip'    = mapM_ (\p -> canvasPath p >> clip) . op Clip
-        lWidth   = liftC . BC.lineWidth . realToFrac . fromOutput . getLineWidth
+        lWidth   = liftC . BC.lineWidth . (fromOutput . getLineWidth :: LineWidth Double -> Double)
         lCap     = liftC . BC.lineCap . fromLineCap . getLineCap
         lJoin    = liftC .  BC.lineJoin . fromLineJoin . getLineJoin
 
-instance Renderable (Segment Closed R2) Canvas where
-  render _ (Linear (OffsetClosed (R2 x y))) = C $ relLineTo x y
-  render _ (Cubic (R2 x1 y1)
-                  (R2 x2 y2)
-                  (OffsetClosed (R2 x3 y3)))
+instance Renderable (Segment Closed V2 Double) Canvas where
+  render _ (Linear (OffsetClosed (V2 x y))) = C $ relLineTo x y
+  render _ (Cubic (V2 x1 y1)
+                  (V2 x2 y2)
+                  (OffsetClosed (V2 x3 y3)))
     = C $ relCurveTo x1 y1 x2 y2 x3 y3
 
-instance Renderable (Trail R2) Canvas where
+instance Renderable (Trail V2 Double) Canvas where
   render _ = withTrail renderLine renderLoop
     where
       renderLine ln = C $ do
@@ -377,20 +367,20 @@ instance Renderable (Trail R2) Canvas where
           _ -> mapM_ renderC (lineSegments . cutLoop $ lp)
         closePath
 
-instance Renderable (Path R2) Canvas where
+instance Renderable (Path V2 Double) Canvas where
   render _ p = C $ do
     canvasPath p
     f <- getStyleAttrib getFillTexture
     s <- getStyleAttrib getLineTexture
     o <- fromMaybe 1 <$> getStyleAttrib getOpacity
     save
-    when (isJust f) (fillTexture (fromJust f) o >> fill)
-    strokeTexture (fromMaybe (SC (SomeColor (black :: Colour Double))) s) o
+    when (isJust f) (fillTexture (fromJust f) (realToFrac o) >> fill)
+    strokeTexture (fromMaybe (SC (SomeColor (black :: Colour Double))) s) (realToFrac o)
     stroke
     restore
 
 -- Add a path to the Canvas context, without stroking or filling it.
-canvasPath :: Path R2 -> RenderM ()
+canvasPath :: Path V2 Double -> RenderM ()
 canvasPath (Path trs) = do
     newPath
     F.mapM_ renderTrail trs
@@ -399,9 +389,9 @@ canvasPath (Path trs) = do
       uncurry moveTo p
       renderC tr
 
-instance Renderable Text Canvas where
+instance Renderable (Text Double) Canvas where
   render _ (Text tt tn al str) = C $ do
-    isLocal <- fromMaybe True <$> getStyleAttrib getFontSizeIsLocal
+    isLocal <- fromMaybe True <$> getStyleAttrib (getFontSizeIsLocal :: FontSize Double -> Bool)
     tf      <- fromMaybe "Calibri" <$> getStyleAttrib getFont
     sz      <- fromMaybe 12 <$> getStyleAttrib (fromOutput . getFontSize)
     slant   <- fromMaybe FontSlantNormal <$> getStyleAttrib getFontSlant
@@ -429,12 +419,12 @@ instance Renderable Text Canvas where
     liftC $ BC.textBaseline vAlign
     liftC $ BC.textAlign hAlign
     liftC $ BC.font fnt
-    fillTexture tx o
+    fillTexture tx (realToFrac o)
     canvasTransform (tn <> reflectionY)
     liftC $ BC.fillText (T.pack str, 0, 0)
     restore
 
-instance Renderable (DImage External) Canvas where
+instance Renderable (DImage Double External) Canvas where
   render _ (DImage path w h tr) = C $ do
     let ImageRef file = path
     save
@@ -443,7 +433,7 @@ instance Renderable (DImage External) Canvas where
     liftC $ BC.drawImage (img, [fromIntegral (-w) / 2, fromIntegral (-h) / 2, fromIntegral w, fromIntegral h])
     restore
 
-renderCanvas :: Int -> SizeSpec2D -> Diagram Canvas R2 -> IO ()
+renderCanvas :: Int -> SizeSpec2D Double -> Diagram Canvas V2 Double -> IO ()
 renderCanvas port sizeSpec d = BC.blankCanvas (fromIntegral port) . flip BC.send $ img
     where
       img = renderDia Canvas (CanvasOptions sizeSpec) d
