@@ -115,6 +115,9 @@ data Canvas = Canvas
 
 type B = Canvas
 
+type instance V Canvas = V2
+type instance N Canvas = Double
+
 data CanvasState = CanvasState { _accumStyle :: Style V2 Double
                                , _csPos :: (Double, Double) }
 
@@ -433,7 +436,7 @@ instance Renderable (DImage Double External) Canvas where
     liftC $ BC.drawImage (img, [fromIntegral (-w) / 2, fromIntegral (-h) / 2, fromIntegral w, fromIntegral h])
     restore
 
-renderCanvas :: Int -> SizeSpec2D Double -> Diagram Canvas V2 Double -> IO ()
+renderCanvas :: Int -> SizeSpec2D Double -> QDiagram Canvas V2 Double Any -> IO ()
 renderCanvas port sizeSpec d = BC.blankCanvas (fromIntegral port) . flip BC.send $ img
     where
       img = renderDia Canvas (CanvasOptions sizeSpec) d
