@@ -27,7 +27,7 @@ hd    = fc lightgray . lw none . translateX 1 . strokeTrail . glueTrail
       . mconcat $ [top, back', bot]
 chord = lc green . stroke $ (chordX ^& chordY) ~~ (chordX ^& 0)
 
-drawLine :: V2 Float -> Diagram B V2 Float
+drawLine :: V2 Double -> Diagram B V2 Double
 drawLine = stroke . fromOffsets . (:[])
 
 r1       = dashingN [0.01, 0.01] 0 . lw veryThin . drawLine $ (1 ^& 0)
@@ -39,7 +39,7 @@ rMid     = lc green . drawLine $ (-midX ^& 0)
 
 -------------------------------------------------------------------------------
 
-text' :: String -> Diagram B V2 Float
+text' :: String -> Diagram B V2 Double
 text' s = text s # italic # fontSize (Output 13)
 
 aLabel       = text' "a" # translate (0.05 ^& 0.2)
@@ -60,7 +60,7 @@ jt           = fc lightgray
              . closeTrail 
              . mconcat $ [hght, jArc]
 
-aHead :: Diagram B V2 Float
+aHead :: Diagram B V2 Double
 aHead = aLabel <> rsinaLabel <> rLabel <> rcosaLabel <> lengthLabel
   <> back # lc red 
   <> chord
@@ -68,7 +68,7 @@ aHead = aLabel <> rsinaLabel <> rLabel <> rcosaLabel <> lengthLabel
   <> thetaArc
   <> dot <> sircle <> hd
 
-aJoint :: Diagram B V2 Float
+aJoint :: Diagram B V2 Double
 aJoint = rLabel # translate (-0.25 ^& 0.1) 
       <> wLabel <> jLabel <> r_jLabel <> jLengthLabel
       <> jt
