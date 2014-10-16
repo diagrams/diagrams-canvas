@@ -1,1 +1,4 @@
-% runghc Circle.hs -o circle.svg -w 400
+Examples using the canvas backend
+---------------------------------
+
+  *  gears.hs demonstrates using animation.
