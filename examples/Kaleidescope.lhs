@@ -7,7 +7,7 @@
 > import           Diagrams.Backend.Canvas.CmdLine
 > import           System.Random
 
-> type Dia = Diagram B R2
+> type Dia = Diagram B
 
 Take any diagram and cut out an equilateral triangle of side 1 from the center. This is the traingle inside of the three mirrors that make up a kaleidescope. The image is created by first repeatedly refecting this triangle to make a hexagon. Then the image plane is tiled with this hexagon.I use a little bit of trickery to create the hexagon of reflected triangles. If you want to see what is really going on, examine the diagrams `ts !! 2` and `ts !! 1`.
 

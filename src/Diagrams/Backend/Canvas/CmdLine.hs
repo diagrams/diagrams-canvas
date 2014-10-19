@@ -103,20 +103,20 @@ defaultMain = mainWith
 instance Mainable (QDiagram Canvas V2 Double Any) where
   type MainOpts (QDiagram Canvas V2 Double Any) = DiaOpts
   
-  mainRender opts d = canvasRender opts d
+  mainRender = canvasRender
 
 canvasRender :: DiaOpts -> QDiagram Canvas V2 Double Any -> IO ()
 canvasRender opts d = BC.blankCanvas (fromIntegral (opts^.port)) (canvasDia opts d)
 
 canvasDia :: DiaOpts -> QDiagram Canvas V2 Double Any -> BC.DeviceContext -> IO ()
-canvasDia opts d context = do
+canvasDia opts d context =
   BC.send context $
     renderDia 
       Canvas 
       (CanvasOptions 
-        (mkSizeSpec 
-          (fromIntegral <$> opts^.width) 
-          (fromIntegral <$> opts^.height))) 
+        (fromIntegral <$> mkSizeSpec2D
+          (opts^.width) 
+          (opts^.height))) 
     d
 
 multiMain :: [(String, QDiagram Canvas V2 Double Any)] -> IO ()
