@@ -17,9 +17,9 @@ d1 =/= d2 = d1 === strutY 2 === d2
 
 eff = text "M" <> square 1
 
-example :: Diagram Canvas V2 Double
+example :: Diagram Canvas
 example = hcat
   [eff, eff # scale 2, eff # scaleX 2, eff # scaleY 2, eff # rotateBy (1/12)]
-    # fontSize (Local 1)
+    # fontSizeL 1
 
 main = mainWith example

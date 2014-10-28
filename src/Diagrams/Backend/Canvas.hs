@@ -47,7 +47,7 @@
 -- particular backend. For @b ~ Canvas@ and @v ~ R2@, we have
 --
 -- > data Options Canvas V2 Double = CanvaseOptions
--- >  { _size :: SizeSpec2D -- ^^ The requested size
+-- >  { _size :: SizeSpec V2 -- ^^ The requested size
 -- >  }
 --
 -- @
@@ -143,7 +143,7 @@ instance Backend Canvas V2 Double where
   data Render  Canvas V2 Double = C (RenderM ())
   type Result  Canvas V2 Double = BC.Canvas ()
   data Options Canvas V2 Double = CanvasOptions
-          { _canvasSize   :: SizeSpec2D Double   -- ^ the requested size
+          { _canvasSize   :: SizeSpec V2 Double   -- ^ the requested size
           }
 
   renderRTree :: Canvas -> Options Canvas V2 Double -> RTree Canvas V2 Double Annotation
@@ -180,13 +180,13 @@ data CanvasRenderState = CanvasRenderState
 initialCanvasRenderState :: CanvasRenderState
 initialCanvasRenderState = CanvasRenderState
 
-getSize :: Options Canvas V2 Double -> SizeSpec2D Double
+getSize :: Options Canvas V2 Double -> SizeSpec V2 Double
 getSize (CanvasOptions {_canvasSize = s}) = s
 
-setSize :: Options Canvas V2 Double -> (SizeSpec2D Double) -> Options Canvas V2 Double
+setSize :: Options Canvas V2 Double -> (SizeSpec V2 Double) -> Options Canvas V2 Double
 setSize o s = o {_canvasSize = s}
 
-size :: Lens' (Options Canvas V2 Double)(SizeSpec2D Double)
+size :: Lens' (Options Canvas V2 Double)(SizeSpec V2 Double)
 size = lens getSize setSize
 
 move :: (Double, Double) -> RenderM ()
@@ -240,9 +240,8 @@ stroke = do
   -- The default value of 0.5 is somewhat arbitary since lineWidth should neve
   -- be 'Nothing'. 0.5 is choose since it is the lower bound of the
   -- default.
-  w <- fromMaybe 0.5 <$> getStyleAttrib
-                        (fromOutput . getLineWidth :: LineWidth Double -> Double)
-  when (w > 0) (liftC $ BC.stroke ())
+  w <- fromMaybe 0.5 <$> getStyleAttrib getLineWidth
+  when (w > (0 :: Double)) (liftC $ BC.stroke ())
 
 fill :: RenderM ()
 fill = liftC $ BC.fill ()
@@ -348,9 +347,9 @@ canvasStyle s = sequence_
   where handle :: (AttributeClass a) => (a -> RenderM ()) -> Maybe (RenderM ())
         handle f = f `fmap` getAttr s
         clip'    = mapM_ (\p -> canvasPath p >> clip) . op Clip
-        lWidth   = liftC . BC.lineWidth . (fromOutput . getLineWidth :: LineWidth Double -> Double)
+        lWidth   = liftC . BC.lineWidth . getLineWidth
         lCap     = liftC . BC.lineCap . fromLineCap . getLineCap
-        lJoin    = liftC .  BC.lineJoin . fromLineJoin . getLineJoin
+        lJoin    = liftC . BC.lineJoin . fromLineJoin . getLineJoin
 
 instance Renderable (Segment Closed V2 Double) Canvas where
   render _ (Linear (OffsetClosed (V2 x y))) = C $ relLineTo x y
@@ -393,18 +392,15 @@ canvasPath (Path trs) = do
       renderC tr
 
 instance Renderable (Text Double) Canvas where
-  render _ (Text tt tn al str) = C $ do
-    isLocal <- fromMaybe True <$> getStyleAttrib (getFontSizeIsLocal :: FontSize Double -> Bool)
+  render _ (Text tr al str) = C $ do
     tf      <- fromMaybe "Calibri" <$> getStyleAttrib getFont
-    sz      <- fromMaybe 12 <$> getStyleAttrib (fromOutput . getFontSize)
+    sz      <- fromMaybe 12 <$> getStyleAttrib getFontSize
     slant   <- fromMaybe FontSlantNormal <$> getStyleAttrib getFontSlant
     fw      <- fromMaybe FontWeightNormal <$> getStyleAttrib getFontWeight
     tx      <- fromMaybe (SC (SomeColor (black :: Colour Double)))
                <$> getStyleAttrib getFillTexture
     o       <- fromMaybe 1 <$> getStyleAttrib getOpacity
-    let fSize = if isLocal
-                        then avgScale tt * sz
-                        else sz
+    let fSize = avgScale tr * sz
         fnt = showFontJS fw slant fSize tf
         vAlign = case al of
                    BaselineText -> BC.AlphabeticBaseline
@@ -423,7 +419,7 @@ instance Renderable (Text Double) Canvas where
     liftC $ BC.textAlign hAlign
     liftC $ BC.font fnt
     fillTexture tx (realToFrac o)
-    canvasTransform (tn <> reflectionY)
+    canvasTransform (tr <> reflectionY)
     liftC $ BC.fillText (T.pack str, 0, 0)
     restore
 
@@ -436,7 +432,7 @@ instance Renderable (DImage Double External) Canvas where
     liftC $ BC.drawImage (img, [fromIntegral (-w) / 2, fromIntegral (-h) / 2, fromIntegral w, fromIntegral h])
     restore
 
-renderCanvas :: Int -> SizeSpec2D Double -> QDiagram Canvas V2 Double Any -> IO ()
+renderCanvas :: Int -> SizeSpec V2 Double -> QDiagram Canvas V2 Double Any -> IO ()
 renderCanvas port sizeSpec d = BC.blankCanvas (fromIntegral port) . flip BC.send $ img
     where
       img = renderDia Canvas (CanvasOptions sizeSpec) d
