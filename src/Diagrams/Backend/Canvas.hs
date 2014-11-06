@@ -237,7 +237,7 @@ getStyleAttrib f = (fmap f . getAttr) <$> use accumStyle
 --   sending a stroke command.
 stroke :: RenderM ()
 stroke = do
-  -- The default value of 0.5 is somewhat arbitary since lineWidth should neve
+  -- The default value of 0.5 is somewhat arbitary since lineWidth should never
   -- be 'Nothing'. 0.5 is choose since it is the lower bound of the
   -- default.
   w <- fromMaybe 0.5 <$> getStyleAttrib getLineWidth
