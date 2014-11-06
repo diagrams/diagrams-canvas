@@ -46,7 +46,7 @@
 -- type of option records and rendering results specific to any
 -- particular backend. For @b ~ Canvas@ and @v ~ R2@, we have
 --
--- > data Options Canvas V2 Double = CanvaseOptions
+-- > data Options Canvas V2 Double = CanvasOptions
 -- >  { _size :: SizeSpec V2 -- ^^ The requested size
 -- >  }
 --
@@ -65,7 +65,7 @@
 -- Canvas()
 -- @
 --
--- which you could call like @renderDia Canvas (CanvaseOptions (width 250))
+-- which you could call like @renderDia Canvas (CanvasOptions (width 250))
 -- myDiagram@
 --
 ------------------------------------------------------------------------------
