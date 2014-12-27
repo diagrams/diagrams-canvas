@@ -8,6 +8,7 @@
 {-# LANGUAGE ViewPatterns          #-}
 {-# LANGUAGE InstanceSigs          #-}
 {-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE RankNTypes            #-} 
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TemplateHaskell       #-}
 
@@ -252,31 +253,23 @@ clip = liftC $ BC.clip ()
 byteRange :: Double -> Word8
 byteRange d = floor (d * 255)
 
-data TextureUse = Fill | Strk
-
-texture :: TextureUse -> Texture Double -> Double -> RenderM()
-texture u (SC (SomeColor c))  o = case u of
-    Fill -> liftC . S.fillStyle   $ s
-    Strk -> liftC . S.strokeStyle $ s
+texture :: (forall a. S.Style a => a -> BC.Canvas ()) -> Texture Double -> Double -> RenderM()
+texture styleFn (SC (SomeColor c))  o = liftC . styleFn $ s
   where s = showColorJS c o
 
-texture u (LG g) _ = liftC $ do
+texture styleFn (LG g) _ = liftC $ do
   grd <- BC.createLinearGradient (x0, y0, x1, y1)
   mapM_ (flip BC.addColorStop $ grd) stops
-  case u of
-    Fill -> S.fillStyle grd
-    Strk -> S.strokeStyle grd
+  styleFn grd
   where
     (x0, y0) = unp2 $ transform (g^.lGradTrans) (g^.lGradStart)
     (x1, y1) = unp2 $ transform (g^.lGradTrans) (g^.lGradEnd)
     stops = map (\s -> ( s^.stopFraction , showColorJS (s^.stopColor) 1)) (g^.lGradStops)
 
-texture u (RG g) _ = liftC $ do
+texture styleFn (RG g) _ = liftC $ do
   grd <- BC.createRadialGradient (x0, y0, r0, x1, y1, r1)
   mapM_ (flip BC.addColorStop $ grd) stops
-  case u of
-    Fill -> S.fillStyle grd
-    Strk -> S.strokeStyle grd
+  styleFn grd
   where
     (r0, r1) = (s * g^.rGradRadius0, s * g^.rGradRadius1)
     (x0, y0) = unp2 $ transform (g^.rGradTrans) (g^.rGradCenter0)
@@ -305,11 +298,11 @@ canvasTransform tr = liftC $ BC.transform vs
            ,realToFrac bx,realToFrac by
            ,realToFrac tx,realToFrac ty)
 
-strokeTexture :: Texture Double -> Double  -> RenderM ()
-strokeTexture = texture Strk
+strokeTexture :: Texture Double -> Double -> RenderM ()
+strokeTexture = texture S.strokeStyle
 
-fillTexture :: Texture Double -> Double  -> RenderM ()
-fillTexture = texture Fill
+fillTexture :: Texture Double -> Double -> RenderM ()
+fillTexture = texture S.fillStyle
 
 fromLineCap :: LineCap -> BC.LineEndCap
 fromLineCap LineCapRound  = BC.RoundCap
