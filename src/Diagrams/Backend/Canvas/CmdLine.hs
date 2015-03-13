@@ -67,7 +67,6 @@ import Diagrams.Backend.Canvas
 import qualified Graphics.Blank        as BC
 
 import Data.Data
-import Control.Lens                    (makeLenses, (^.))
 import Options.Applicative
 
 data DiaOpts = DiaOpts 
