@@ -1,8 +1,8 @@
-{-# LANGUAGE DeriveDataTypeable   #-}
-{-# LANGUAGE FlexibleInstances    #-}
-{-# LANGUAGE TypeFamilies         #-}
-{-# LANGUAGE TemplateHaskell      #-}
-{-# LANGUAGE CPP                  #-}
+{-# LANGUAGE CPP                #-}
+{-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE FlexibleInstances  #-}
+{-# LANGUAGE TemplateHaskell    #-}
+{-# LANGUAGE TypeFamilies       #-}
 
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
@@ -49,7 +49,7 @@
 -----------------------------------------------------------------------------
 
 module Diagrams.Backend.Canvas.CmdLine
-       ( 
+       (
         -- * General form of @main@
         --  $mainWith
         mainWith
@@ -61,15 +61,16 @@ module Diagrams.Backend.Canvas.CmdLine
        , B
        ) where
 
-import Diagrams.Prelude                hiding (width, height, option, (<>), value)
-import Diagrams.Backend.CmdLine        hiding (width, height)
-import Diagrams.Backend.Canvas
-import qualified Graphics.Blank        as BC
+import           Diagrams.Backend.Canvas
+import           Diagrams.Backend.CmdLine hiding (height, width)
+import           Diagrams.Prelude         hiding (height, option, value, width,
+                                           (<>))
+import qualified Graphics.Blank           as BC
 
-import Data.Data
-import Options.Applicative
+import           Data.Data
+import           Options.Applicative
 
-data DiaOpts = DiaOpts 
+data DiaOpts = DiaOpts
   { _width  :: Maybe Int -- ^ Final output width of diagram.
   , _height :: Maybe Int -- ^ Final height of diagram.
   , _port   :: Int       -- ^ Port on which to start web server.
@@ -88,20 +89,20 @@ diaOpts = DiaOpts
     <> metavar "HEIGHT"
     <> help "Desired HEIGHT of the output image")
   <*> option auto
-      (long "port" <> short 'p' 
+      (long "port" <> short 'p'
     <> value 3000
     <> metavar "PORT"
     <> help "Port on which to satrt the web server (default 3000)")
 
 instance Parseable DiaOpts where
   parser = diaOpts
-  
+
 defaultMain :: QDiagram Canvas V2 Double Any -> IO ()
 defaultMain = mainWith
-    
+
 instance Mainable (QDiagram Canvas V2 Double Any) where
   type MainOpts (QDiagram Canvas V2 Double Any) = DiaOpts
-  
+
   mainRender = canvasRender
 
 canvasRender :: DiaOpts -> QDiagram Canvas V2 Double Any -> IO ()
@@ -110,19 +111,19 @@ canvasRender opts d = BC.blankCanvas (fromIntegral (opts^.port)) (canvasDia opts
 canvasDia :: DiaOpts -> QDiagram Canvas V2 Double Any -> BC.DeviceContext -> IO ()
 canvasDia opts d context =
   BC.send context $
-    renderDia 
-      Canvas 
-      (CanvasOptions 
+    renderDia
+      Canvas
+      (CanvasOptions
         (fromIntegral <$> mkSizeSpec2D
-          (opts^.width) 
-          (opts^.height))) 
+          (opts^.width)
+          (opts^.height)))
     d
 
 multiMain :: [(String, QDiagram Canvas V2 Double Any)] -> IO ()
 multiMain = mainWith
 
 instance Mainable [(String, QDiagram Canvas V2 Double Any)] where
-  type MainOpts [(String, QDiagram Canvas V2 Double Any)] = 
+  type MainOpts [(String, QDiagram Canvas V2 Double Any)] =
     (MainOpts (QDiagram Canvas V2 Double Any), DiagramMultiOpts)
 
   mainRender = defaultMultiMainRender
