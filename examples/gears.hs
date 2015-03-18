@@ -2,12 +2,11 @@
 
 module Main where
 
-import Control.Lens ((^.))
-import Data.Colour.SRGB              (sRGB24read)
-import Diagrams.Prelude
-import Diagrams.Backend.Canvas
-import Graphics.Blank                hiding ((#), rotate, scale)
-import Control.Concurrent
+import           Control.Concurrent
+import           Data.Colour.SRGB        (sRGB24read)
+import           Diagrams.Backend.Canvas
+import           Diagrams.Prelude
+import           Graphics.Blank          hiding (rotate, scale, ( # ))
 
 blue2, blue3, blue6, blue7 :: Colour Double
 [ blue2, blue3, blue6, blue7] =
@@ -31,7 +30,7 @@ planet r = circle 0.8 # fc black
 
 planets :: Angle Double -> Diagram B
 planets r
-  = atPoints (trailVertices $ square 2) (repeat (planet r)) 
+  = atPoints (trailVertices $ square 2) (repeat (planet r))
   # rotateBy (1/8) # centerXY
 
 sun :: Angle Double -> Diagram B
@@ -50,7 +49,7 @@ main = blankCanvas 3000 $ \context -> loop context 0
 
 loop :: DeviceContext -> Double -> IO a
 loop context n = do
-  send context $ renderDia Canvas (CanvasOptions (mkWidth 500)) 
+  send context $ renderDia Canvas (CanvasOptions (mkWidth 500))
                                   (solar (n/588 @@ turn))
   threadDelay 2000
   loop context (n + 1)
