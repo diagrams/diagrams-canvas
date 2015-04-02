@@ -1,5 +1,5 @@
 Name:                diagrams-canvas
-Version:             0.3.0.3
+Version:             0.3.0.4
 Synopsis:            HTML5 canvas backend for diagrams drawing EDSL
 Description:         This package provides a modular backend for rendering
                      diagrams created with the diagrams EDSL using an
