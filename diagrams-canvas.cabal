@@ -13,7 +13,7 @@ Bug-reports:         http://github.com/diagrams/diagrams-canvas/issues
 Stability:           Experimental
 Category:            Graphics
 Build-type:          Simple
-Extra-source-files:  README.md, CHANGES.md
+Extra-source-files:  README.md, CHANGELOG.md
 Tested-with:         GHC == 7.4.2, GHC == 7.6.3, GHC == 7.8.4, GHC == 7.10.1
 Cabal-version:       >=1.10
 Source-repository head
