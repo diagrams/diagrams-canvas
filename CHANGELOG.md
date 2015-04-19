@@ -1,6 +1,6 @@
 # Change Log
 
-## [1.3]() (8 April 2015)
+## [1.3](https://github.com/diagrams/diagrams-canvas/tree/v1.3) (19 April 2015)
 
 - release to coincide with 1.3
 
