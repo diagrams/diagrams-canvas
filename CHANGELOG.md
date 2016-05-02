@@ -1,6 +1,10 @@
+## [v1.3.0.4](https://github.com/diagrams/diagrams-canvas/tree/v1.3.0.4)(2016-05-01)
+
+- allow `lens-4.14`
+
 ## [v1.3.0.3](https://github.com/diagrams/diagrams-canvas/tree/v1.3.0.3) (2016-01-14)
 
-- Allow blank-canvas v0.6
+- Allow `blank-canvas-0.6`
 
 ## [v1.3.0.2](https://github.com/diagrams/diagrams-canvas/tree/v1.3.0.2) (2015-07-19)
 
