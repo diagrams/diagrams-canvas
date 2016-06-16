@@ -6,6 +6,7 @@ env:
     - GHCVER=7.6.3 CABALVER=1.18
     - GHCVER=7.8.4 CABALVER=1.18
     - GHCVER=7.10.2 SKIP_HADDOCK=true CABALVER=1.22
+    - GHCVER=8.0.1 CABALVER=1.24
   global:
     - HEAD_DEPS="diagrams-core diagrams-lib diagrams-solve active monoid-extras dual-tree"
 
