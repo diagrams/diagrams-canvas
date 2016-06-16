@@ -29,4 +29,4 @@ notifications:
       - irc.freenode.org#diagrams
     skip_join: true
     template:
-      - "\x0313diagrams-lib\x03/\x0306%{branch}\x03 \x0314%{commit}\x03 %{build_url} %{message}"
+      - "\x0313diagrams-canvas\x03/\x0306%{branch}\x03 \x0314%{commit}\x03 %{build_url} %{message}"
