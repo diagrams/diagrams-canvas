@@ -1,3 +1,10 @@
+## [v1.3.0.5](https://github.com/diagrams/diagrams-canvas/tree/v1.3.0.5)(2016-06-16)
+
+- allow `base-4.9`
+- allow `data-default-class-0.1`
+- drop support for GHC 7.6
+- test on GHC 8.0.1
+
 ## [v1.3.0.4](https://github.com/diagrams/diagrams-canvas/tree/v1.3.0.4)(2016-05-01)
 
 - allow `lens-4.14`
