@@ -1,3 +1,7 @@
+## [v1.4](https://github.com/diagrams/diagrams-canvas/tree/v1.4) (XXX)
+
+- No changes, just bump version number to go with diagrams 1.4 release
+
 ## [v1.3.0.5](https://github.com/diagrams/diagrams-canvas/tree/v1.3.0.5)(2016-06-16)
 
 - allow `base-4.9`
