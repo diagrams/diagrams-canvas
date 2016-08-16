@@ -1,3 +1,7 @@
+## [v1.3.0.6](https://github.com/diagrams/diagrams-canvas/tree/v1.3.0.6) (2016-08-16)
+
+- allow `optparse-applicative-0.13`
+
 ## [v1.3.0.5](https://github.com/diagrams/diagrams-canvas/tree/v1.3.0.5)(2016-06-16)
 
 - allow `base-4.9`
