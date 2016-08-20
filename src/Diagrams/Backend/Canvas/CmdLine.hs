@@ -63,8 +63,7 @@ module Diagrams.Backend.Canvas.CmdLine
 
 import           Diagrams.Backend.Canvas
 import           Diagrams.Backend.CmdLine hiding (height, width)
-import           Diagrams.Prelude         hiding (height, option, value, width,
-                                           (<>))
+import           Diagrams.Prelude         hiding (height, option, value, width)
 import qualified Graphics.Blank           as BC
 
 import           Data.Data
