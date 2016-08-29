@@ -2,8 +2,8 @@ diagrams-canvas
 ===============
 
 diagrams-canvas is a canvas backend for diagrams based on the blank-canvas
-https://github.com/ku-fpg/blank-canvas package. 
-Diagrams is a powerful, flexible, declarative domain-specific language for 
+https://github.com/ku-fpg/blank-canvas package.
+Diagrams is a powerful, flexible, declarative domain-specific language for
 creating vector graphics, using the Haskell programming language.
 It supports most features defined in [diagrams-lib].
 
@@ -23,7 +23,7 @@ A simple example that uses _diagrams-canvas_ to draw a square.
 import Diagrams.Prelude
 import Diagrams.Backend.Canvas.CmdLine
 
-b1 = square 20 # lw 0.002
+b1 = (square 20 :: Diagram B) # lw 0.002
 
 main = mainWith (pad 1.1 b1)
 ```
