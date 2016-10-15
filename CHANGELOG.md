@@ -1,6 +1,6 @@
 ## [v1.4](https://github.com/diagrams/diagrams-canvas/tree/v1.4) (XXX)
 
-- No changes, just bump version number to go with diagrams 1.4 release
+- allow `lens-4.15`
 
 ## [v1.3.0.7](https://github.com/diagrams/diagrams-canvas/tree/v1.3.0.7) (2016-08-22)
 
