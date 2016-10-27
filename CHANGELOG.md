@@ -1,4 +1,4 @@
-## [v1.4](https://github.com/diagrams/diagrams-canvas/tree/v1.4) (XXX)
+## [v1.4](https://github.com/diagrams/diagrams-canvas/tree/v1.4) (2016-10-26)
 
 - allow `lens-4.15`
 - allow `diagrams-core-1.4`
