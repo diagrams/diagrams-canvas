@@ -1,6 +1,8 @@
 ## [v1.4](https://github.com/diagrams/diagrams-canvas/tree/v1.4) (XXX)
 
 - allow `lens-4.15`
+- allow `diagrams-core-1.4`
+- allow `diagrams-lib-1.4`
 
 ## [v1.3.0.7](https://github.com/diagrams/diagrams-canvas/tree/v1.3.0.7) (2016-08-22)
 
