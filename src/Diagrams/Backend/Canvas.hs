@@ -99,6 +99,7 @@ import           Diagrams.Attributes
 import           Diagrams.Prelude             hiding (fillTexture, moveTo, stroke, size)
 import           Diagrams.TwoD.Adjust         (adjustDia2D)
 import           Diagrams.TwoD.Attributes     (splitTextureFills)
+import           Diagrams.TwoD.Image
 import           Diagrams.TwoD.Path           (Clip (Clip))
 import           Diagrams.TwoD.Text
 
@@ -417,9 +418,9 @@ instance Renderable (Text Double) Canvas where
     liftC $ BC.fillText (T.pack str, 0, 0)
     restore
 
-instance Renderable (DImage Double External) Canvas where
+instance Renderable (DImage b Double External) Canvas where
   render _ (DImage path w h tr) = C $ do
-    let ImageRef file = path
+    let ImageRef (FP file) = path
     save
     canvasTransform (tr <> reflectionY)
     img <- liftC $ BC.newImage (T.pack file)
