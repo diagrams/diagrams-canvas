@@ -1,3 +1,8 @@
+## v1.4r1 (Hackage revision)
+
+- allow `base-4.10`
+- allow `optparse-applicative-0.14`
+
 ## [v1.4](https://github.com/diagrams/diagrams-canvas/tree/v1.4) (2016-10-26)
 
 - allow `lens-4.15`
