@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP                   #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleInstances     #-}
@@ -136,9 +137,14 @@ liftC = lift
 runRenderM :: RenderM a -> BC.Canvas a
 runRenderM = flip SS.evalStateStackT def
 
+instance Semigroup (Render Canvas V2 Double) where
+  C c1 <> C c2 = C (c1 >> c2)
+
 instance Monoid (Render Canvas V2 Double) where
   mempty  = C $ return ()
-  (C c1) `mappend` (C c2) = C (c1 >> c2)
+#if !MIN_VERSION_base(4,11,0)
+  mappend = (<>)
+#endif
 
 instance Backend Canvas V2 Double where
   data Render  Canvas V2 Double = C (RenderM ())
