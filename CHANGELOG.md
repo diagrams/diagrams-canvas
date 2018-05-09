@@ -1,3 +1,9 @@
+## [v1.4.1](https://github.com/diagrams/diagrams-canvas/tree/v1.4.1) (2018-05-09)
+
+- allow `base-4.11`
+- allow `lens-4.16`
+- Add `Semigroup (Render Canvas V2 Double)` instance
+
 ## v1.4r1 (Hackage revision)
 
 - allow `base-4.10`
