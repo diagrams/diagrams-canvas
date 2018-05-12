@@ -1,4 +1,5 @@
 {-# LANGUAGE NoMonomorphismRestriction #-}
+{-# LANGUAGE GADTs #-}
 
 module Main where
 
@@ -6,13 +7,13 @@ import           Control.Concurrent
 import           Data.Colour.SRGB        (sRGB24read)
 import           Diagrams.Backend.Canvas
 import           Diagrams.Prelude
-import           Graphics.Blank          hiding (rotate, scale, ( # ))
+import           Graphics.Blank          (DeviceContext, send, blankCanvas)
 
 blue2, blue3, blue6, blue7 :: Colour Double
 [ blue2, blue3, blue6, blue7] =
   map sRGB24read ["#c6dbef", "#9ecae1", "#2171b5", "#08519c"]
 
-wheel :: [Colour Double] -> Diagram B
+wheel :: [Colour Double] -> Diagram V2
 wheel [] = circle 1 # fc black
 wheel cs = wheel' # rotateBy r
   where
@@ -22,18 +23,18 @@ wheel cs = wheel' # rotateBy r
     w = wedge 1 xDir (a @@ turn) # lw none
     r = 1/4 - 1/(2*fromIntegral n)
 
-planet :: Angle Double -> Diagram B
+planet :: Angle Double -> Diagram V2
 planet r = circle 0.8 # fc black
         <> wheel (take 12 . cycle $ [blue3, blue6])
          # rotate r
          # lw none
 
-planets :: Angle Double -> Diagram B
+planets :: Angle Double -> Diagram V2
 planets r
   = atPoints (trailVertices $ square 2) (repeat (planet r))
   # rotateBy (1/8) # centerXY
 
-sun :: Angle Double -> Diagram B
+sun :: Angle Double -> Diagram V2
 sun r = w # rotate ((r^.turn / (1 - sqrt 2)) @@ turn)
   where
     w = circle 0.3 # fc black <> wheel (take 60 . cycle
@@ -41,7 +42,7 @@ sun r = w # rotate ((r^.turn / (1 - sqrt 2)) @@ turn)
       # scale (sqrt 2 -1)
       # rotateBy (1/8)
 
-solar :: Angle Double -> Diagram B
+solar :: Angle Double -> Diagram V2
 solar r = bg black . pad 1.1 . centerXY $ sun r <> planets r
 
 main :: IO ()
@@ -49,7 +50,8 @@ main = blankCanvas 3000 $ \context -> loop context 0
 
 loop :: DeviceContext -> Double -> IO a
 loop context n = do
-  send context $ renderDia Canvas (CanvasOptions (mkWidth 500))
+  send context $ view _3 $ renderDiaT (CanvasOptions (mkWidth 500))
                                   (solar (n/588 @@ turn))
-  threadDelay 2000
+  threadDelay 20000
   loop context (n + 1)
+
