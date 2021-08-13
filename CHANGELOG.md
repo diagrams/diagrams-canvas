@@ -4,6 +4,10 @@
 - allow `lens-4.16`
 - Add `Semigroup (Render Canvas V2 Double)` instance
 
+- rev1 (13 August 2021)
+    - Allow `base-4.15`, `blank-canvas-0.7`, `lens-5.0`,
+      `containers-0.6`, `statestack-0.3`, `optparse-applicative-0.16`, `diagrams-core-1.5`
+
 ## v1.4r1 (Hackage revision)
 
 - allow `base-4.10`
