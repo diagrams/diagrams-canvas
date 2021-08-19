@@ -44,7 +44,7 @@
 --   from "Diagrams.Backend.CmdLine".
 --
 -- For a tutorial on command-line diagram creation see
--- <http://projects.haskell.org/diagrams/doc/cmdline.html>.
+-- <https://diagrams.github.io/doc/cmdline.html>.
 --
 -----------------------------------------------------------------------------
 
