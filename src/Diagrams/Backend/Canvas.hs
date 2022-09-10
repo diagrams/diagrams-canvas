@@ -9,9 +9,10 @@
 {-# LANGUAGE ViewPatterns          #-}
 {-# LANGUAGE InstanceSigs          #-}
 {-# LANGUAGE OverloadedStrings     #-}
-{-# LANGUAGE RankNTypes            #-} 
+{-# LANGUAGE RankNTypes            #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TemplateHaskell       #-}
+{-# LANGUAGE TypeOperators         #-}
 
 -------------------------------------------------------------------------------
 -- |
