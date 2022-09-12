@@ -1,3 +1,8 @@
+## [v1.4.1.1](https://github.com/diagrams/diagrams-canvas/tree/v1.4.1.1) (2022-09-12)
+
+- allow `base-4.17`, `lens-5.2`, `text-2.0`
+- test on GHC 9.4
+
 ## [v1.4.1](https://github.com/diagrams/diagrams-canvas/tree/v1.4.1) (2018-05-09)
 
 - allow `base-4.11`
@@ -9,7 +14,6 @@
       `containers-0.6`, `statestack-0.3`, `optparse-applicative-0.16`,
       `diagrams-core-1.5`
 - r3 (4 Feb 2022): allow `optparse-applicative-0.17`
-- r4 (12 Sep 2022): allow `base-4.17`, `lens-5.2`, `text-2.0`, and test on GHC 9.4
 
 ## v1.4r1 (Hackage revision)
 
