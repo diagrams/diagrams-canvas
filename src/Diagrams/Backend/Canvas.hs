@@ -84,7 +84,8 @@ module Diagrams.Backend.Canvas
   ) where
 
 import           Control.Lens                 hiding (transform, (#))
-import           Control.Monad.State          (when, State, evalState)
+import           Control.Monad                (when)
+import           Control.Monad.State          (State, evalState)
 import qualified Control.Monad.StateStack     as SS
 import           Control.Monad.Trans          (lift)
 
