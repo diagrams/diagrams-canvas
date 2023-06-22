@@ -1,3 +1,9 @@
+## [v1.4.1.2](https://github.com/diagrams/diagrams-canvas/tree/v1.4.1.2) (2023-06-22)
+
+- Allow `base-4.18`, `optparse-applicative-0.18`, and `mtl-2.3`
+- Test on GHC 9.6
+- Drop support for GHC < 8.8
+
 ## [v1.4.1.1](https://github.com/diagrams/diagrams-canvas/tree/v1.4.1.1) (2022-09-12)
 
 - allow `base-4.17`, `lens-5.2`, `text-2.0`
