@@ -4,6 +4,8 @@
 - Test on GHC 9.6
 - Drop support for GHC < 8.8
 
+- r1 (15 January 2024): allow `base-4.19`, `text-2.1`, and test on GHC 9.8
+
 ## [v1.4.1.1](https://github.com/diagrams/diagrams-canvas/tree/v1.4.1.1) (2022-09-12)
 
 - allow `base-4.17`, `lens-5.2`, `text-2.0`
