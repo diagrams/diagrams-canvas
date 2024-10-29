@@ -34,7 +34,7 @@ Library
                        lens >= 4.0 && < 5.4,
                        containers >= 0.3 && < 0.8,
                        text >= 1.0 && < 2.2,
-                       data-default-class >= 0.0.1 && < 0.2,
+                       data-default >= 0.8 && < 0.9,
                        statestack >= 0.2 && <0.4,
                        optparse-applicative >= 0.13 && < 0.19
 
