@@ -89,7 +89,7 @@ import           Control.Monad.State          (State, evalState)
 import qualified Control.Monad.StateStack     as SS
 import           Control.Monad.Trans          (lift)
 
-import           Data.Default.Class
+import           Data.Default
 import qualified Data.Foldable                as F
 import           Data.Maybe                   (catMaybes, isJust, fromJust, fromMaybe)
 import           Data.NumInstances            ()
