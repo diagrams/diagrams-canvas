@@ -1,3 +1,7 @@
+## [v1.4.2](https://github.com/diagrams/diagrams-canvas/tree/v1.4.2) (2024-10-30)
+
+- Require `data-default-0.8`
+
 ## [v1.4.1.2](https://github.com/diagrams/diagrams-canvas/tree/v1.4.1.2) (2023-06-22)
 
 - Allow `base-4.18`, `optparse-applicative-0.18`, and `mtl-2.3`
