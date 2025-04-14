@@ -2,6 +2,8 @@
 
 - Require `data-default-0.8`
 
+- r1 (14 Apr 2025): allow `base-4.21`, `diagrams-lib-1.5`, test on GHC 9.12
+
 ## [v1.4.1.2](https://github.com/diagrams/diagrams-canvas/tree/v1.4.1.2) (2023-06-22)
 
 - Allow `base-4.18`, `optparse-applicative-0.18`, and `mtl-2.3`
