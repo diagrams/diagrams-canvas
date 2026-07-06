@@ -84,6 +84,7 @@ module Diagrams.Backend.Canvas
   ) where
 
 import           Control.Lens             hiding (transform, ( # ))
+import           Control.Monad            (when)
 import           Control.Monad.State
 import           Control.Monad.Trans      (lift)
 
