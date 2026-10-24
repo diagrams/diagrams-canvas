@@ -5,7 +5,6 @@
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE TypeSynonymInstances  #-}
-{-# LANGUAGE DeriveDataTypeable    #-}
 {-# LANGUAGE ViewPatterns          #-}
 {-# LANGUAGE InstanceSigs          #-}
 {-# LANGUAGE OverloadedStrings     #-}
@@ -95,7 +94,6 @@ import           Data.Maybe                   (catMaybes, isJust, fromJust, from
 import           Data.NumInstances            ()
 import qualified Data.Text                    as T
 import           Data.Tree                    (Tree(Node))
-import           Data.Typeable                (Typeable)
 import           Data.Word                    (Word8)
 
 import           Diagrams.Attributes
@@ -115,7 +113,7 @@ import qualified Graphics.Blank.Style         as S
 -- | This data declaration is simply used as a token to distinguish
 --   this rendering engine.
 data Canvas = Canvas
-    deriving (Eq, Ord, Read, Show, Typeable)
+    deriving (Eq, Ord, Read, Show)
 
 type B = Canvas
 
@@ -228,7 +226,7 @@ relLineTo x y = do
 relCurveTo :: Double -> Double -> Double -> Double -> Double -> Double -> RenderM ()
 relCurveTo ax ay bx by cx cy = do
   p <- use csPos
-  let [(ax',ay'),(bx',by'),(cx',cy')] = map (p +) [(ax,ay),(bx,by),(cx,cy)]
+  let ((ax',ay'),(bx',by'),(cx',cy')) = over each (p +) ((ax,ay),(bx,by),(cx,cy))
   liftC $ BC.bezierCurveTo (ax',ay',bx',by',cx',cy')
   move (cx', cy')
 
@@ -301,7 +299,9 @@ showColorJS c o = T.concat
 canvasTransform :: T2 Double -> RenderM ()
 canvasTransform tr = liftC $ BC.transform vs
     where
-      [[ax, ay], [bx, by], [tx, ty]] = matrixHomRep tr
+      (ax, ay, bx, by, tx, ty) = case matrixHomRep tr of
+        [[ax', ay'], [bx', by'], [tx', ty']] -> (ax', ay', bx', by', tx', ty')
+        _ -> (0, 0, 0, 0, 0, 0)
       vs = (realToFrac ax,realToFrac ay
            ,realToFrac bx,realToFrac by
            ,realToFrac tx,realToFrac ty)

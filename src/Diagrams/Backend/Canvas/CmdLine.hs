@@ -5,6 +5,7 @@
 {-# LANGUAGE TypeFamilies       #-}
 
 {-# OPTIONS_GHC -fno-warn-orphans #-}
+{-# OPTIONS_GHC -fno-warn-dodgy-imports #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -73,7 +74,7 @@ data DiaOpts = DiaOpts
   { _width  :: Maybe Int -- ^ Final output width of diagram.
   , _height :: Maybe Int -- ^ Final height of diagram.
   , _port   :: Int       -- ^ Port on which to start web server.
-  } deriving (Show, Data, Typeable)
+  } deriving (Show, Data)
 
 makeLenses ''DiaOpts
 
