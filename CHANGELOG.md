@@ -1,3 +1,11 @@
+## [v1.4.2.1](https://github.com/diagrams/diagrams-canvas/tree/v1.4.2.1) (2026-11-11)
+
+- Allow `base-4.22`, `diagrams-lib-1.6`, `containers-0.8`
+- Remove redundant `cmdargs` dep
+- Test on GHC 9.14
+- Drop support for GHC < 8.10
+- Fix new warnings
+
 ## [v1.4.2](https://github.com/diagrams/diagrams-canvas/tree/v1.4.2) (2024-10-30)
 
 - Require `data-default-0.8`
